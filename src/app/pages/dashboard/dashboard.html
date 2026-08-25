@@ -5,7 +5,6 @@
       <p>Welcome back, <strong>{{ auth.currentUser()?.name }}</strong></p>
     </div>
   </div>
-
   <div class="welcome-card">
     <div class="welcome-content">
       <span class="welcome-label">TASK MANAGEMENT SYSTEM</span>
@@ -13,7 +12,6 @@
       <p>Manage your tasks, assignments and users from one place.</p>
     </div>
   </div>
-
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-icon pending-icon">!</div>
@@ -22,7 +20,6 @@
         <strong>{{ pendingTasks() }}</strong>
       </div>
     </div>
-
     <div class="stat-card">
       <div class="stat-icon process-icon">↻</div>
       <div class="stat-content">
@@ -30,7 +27,6 @@
         <strong>{{ processTasks() }}</strong>
       </div>
     </div>
-
     <div class="stat-card">
       <div class="stat-icon completed-icon">✓</div>
       <div class="stat-content">
@@ -38,18 +34,15 @@
         <strong>{{ completedTasks() }}</strong>
       </div>
     </div>
-
     @if (auth.canViewUsers()) {
-      <div class="stat-card">
-        <div class="stat-icon users-icon">♙</div>
-        <div class="stat-content">
-          <span>Total Users</span>
-          <strong>{{ totalUsers() }}</strong>
-        </div>
+    <div class="stat-card">
+      <div class="stat-icon users-icon">♙</div>
+      <div class="stat-content">
+        <span>Total Users</span>
+        <strong>{{ totalUsers() }}</strong>
       </div>
-    }
+    </div> }
   </div>
-
   <div class="content-card">
     <div class="card-header">
       <div>
@@ -57,93 +50,59 @@
         <p>Your assigned and created tasks.</p>
       </div>
     </div>
-
     @if (tasks().length > 0) {
-      <div class="dashboard-task-list">
-
-        @for (task of tasks(); track task.id) {
-          <div class="dashboard-task-item">
-
-            <div class="dashboard-task-info">
-              <strong>{{ task.title }}</strong>
-
-              @if (task.description) {
-                <span>{{ task.description }}</span>
-              }
-            </div>
-
-            <div class="dashboard-task-assigned">
-              <small>Assigned To</small>
-              <strong>{{ getAssignedToName(task) }}</strong>
-            </div>
-
-            <div class="dashboard-task-status">
-              <span
-                class="status-badge"
-                [class]="getStatusClass(task.status)"
-              >
-                {{ getStatusText(task.status) }}
-              </span>
-            </div>
-
-          </div>
-        }
-
-      </div>
-    }
+    <div class="dashboard-task-list">
+      @for (task of tasks(); track task.id) {
+      <div class="dashboard-task-item">
+        <div class="dashboard-task-info">
+          <strong>{{ task.title }}</strong>
+          @if (task.description) { <span>{{ task.description }}</span> }
+        </div>
+        <div class="dashboard-task-assigned">
+          <small>Assigned To</small>
+          <strong>{{ getAssignedToName(task) }}</strong>
+        </div>
+        <div class="dashboard-task-status">
+          <span class="status-badge" [class]="getStatusClass(task.status)">
+            {{ getStatusText(task.status) }}
+          </span>
+        </div>
+      </div> }
+    </div> }
     @else {
-      <div class="empty-state">
-        <div class="empty-icon">✓</div>
-        <h3>No Tasks</h3>
-        <p>You currently don't have any tasks.</p>
-      </div>
-    }
+    <div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <h3>No Tasks</h3>
+      <p>You currently don't have any tasks.</p>
+    </div> }
   </div>
-
   @if (auth.canViewUsers()) {
-    <div class="content-card">
-      <div class="card-header">
-        <div>
-          <h3>System Access</h3>
-          <p>Your available system permissions.</p>
-        </div>
-      </div>
-
-      <div class="permission-grid">
-
-        <div class="permission-item">
-          <span>View Users</span>
-          <strong class="allowed">Allowed</strong>
-        </div>
-
-        <div class="permission-item">
-          <span>View All Tasks</span>
-          <strong class="allowed">Allowed</strong>
-        </div>
-
-        <div class="permission-item">
-          <span>User Management</span>
-
-          @if (auth.isMasterAdmin() || auth.canWriteUsers()) {
-            <strong class="allowed">Allowed</strong>
-          }
-          @else {
-            <strong class="limited">Read Only</strong>
-          }
-        </div>
-
-        <div class="permission-item">
-          <span>Master Admin</span>
-
-          @if (auth.isMasterAdmin()) {
-            <strong class="allowed">Yes</strong>
-          }
-          @else {
-            <strong class="limited">No</strong>
-          }
-        </div>
-
+  <div class="content-card">
+    <div class="card-header">
+      <div>
+        <h3>System Access</h3>
+        <p>Your available system permissions.</p>
       </div>
     </div>
-  }
+    <div class="permission-grid">
+      <div class="permission-item">
+        <span>View Users</span>
+        <strong class="allowed">Allowed</strong>
+      </div>
+      <div class="permission-item">
+        <span>View All Tasks</span>
+        <strong class="allowed">Allowed</strong>
+      </div>
+      <div class="permission-item">
+        <span>User Management</span>
+        @if (auth.isMasterAdmin() || auth.canWriteUsers()) { <strong class="allowed">Allowed</strong> }
+        @else { <strong class="limited">Read Only</strong> }
+      </div>
+      <div class="permission-item">
+        <span>Master Admin</span>
+        @if (auth.isMasterAdmin()) { <strong class="allowed">Yes</strong> }
+        @else { <strong class="limited">No</strong> }
+      </div>
+    </div>
+  </div> }
 </div>

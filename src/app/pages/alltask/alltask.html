@@ -1,593 +1,194 @@
 <div class="tasks-page">
-
-  <!-- ================= HEADER ================= -->
-
-  <div class="page-header">
-
-    <div>
-      <h1>All Tasks</h1>
-      <p>View and manage tasks according to your permissions.</p>
-    </div>
-
-    <div class="access-info">
-      <span>YOUR ACCESS</span>
-      <strong>{{ getAccessText() }}</strong>
-    </div>
-
-  </div>
-
-
-  <!-- ================= PERMISSION INFO ================= -->
-
-  <div class="permission-info">
-
-  <div class="permission-icon">ⓘ</div>
-
-  <div>
-
-    <strong>Task permissions</strong>
-
-    @if (auth.isMasterAdmin()) {
-
-      <p>
-        You have full access. You can edit, assign, update status and delete tasks.
-      </p>
-
-    }
-    @else if (auth.canWriteUsers()) {
-
-      <p>
-        You can edit title, description, deadline, assignment, status and delete tasks.
-      </p>
-
-    }
-    @else if (auth.canReadUsers()) {
-
-      <p>
-        You have view-only access. You can view all tasks but cannot edit or delete them.
-      </p>
-
-    }
-
-  </div>
-
-</div>
-
-  <!-- ================= TOOLBAR ================= -->
-
-  <div class="toolbar">
-
-    <div class="search-box">
-
-      <span>🔍</span>
-
-      <input
-        type="text"
-        placeholder="Search tasks, users..."
-        [ngModel]="searchText()"
-        (ngModelChange)="onSearchChange($event)"
-      />
-
-    </div>
-
-
-    <select
-      class="status-filter"
-      [ngModel]="statusFilter()"
-      (ngModelChange)="onStatusChange($event)"
-    >
-
-      <option value="all">All Status</option>
-      <option value="1">Pending</option>
-      <option value="2">In Process</option>
-      <option value="3">Completed</option>
-
-    </select>
-
-
-    <button
-      type="button"
-      class="refresh-button"
-      (click)="loadTasks()"
-      [disabled]="loading()"
-    >
-      ↻ Refresh
-    </button>
-
-  </div>
-
-
-  <!-- ================= ERROR ================= -->
-
-  @if (errorMessage()) {
-
-    <div class="error-message">
-      {{ errorMessage() }}
-    </div>
-
-  }
-
-
-  <!-- ================= LOADING ================= -->
-
-  @if (loading()) {
-
-    <div class="loading-state">
-
-      <div class="spinner"></div>
-
-      <p>Loading tasks...</p>
-
-    </div>
-
-  }
-
-
-  <!-- ================= TABLE ================= -->
-
-  @if (!loading() && !errorMessage()) {
-
-    @if (filteredTasks().length > 0) {
-
-      <div class="task-table-container">
-
-        <table class="task-table">
-
-          <thead>
-
-            <tr>
-
-              <th>Task</th>
-              <th>Created By</th>
-              <th>Assigned To</th>
-              <th>Deadline</th>
-              <th>Status</th>
-              <th>Actions</th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody>
-
-            @for (
-              task of filteredTasks();
-              track task.id
-            ) {
-
-              <tr>
-
-                <!-- TASK -->
-
-                <td>
-
-                  <div class="task-info">
-
-                    <strong>
-                      {{ task.title }}
-                    </strong>
-
-                    @if (task.description) {
-
-                      <span>
-                        {{ task.description }}
-                      </span>
-
-                    }
-
-                  </div>
-
-                </td>
-
-
-                <!-- CREATED BY -->
-
-                <td>
-
-                  <div class="person-info">
-
-                    <span class="person-avatar">
-                      {{ task.createdByName.charAt(0).toUpperCase() }}
-                    </span>
-
-                    <span>
-                      {{ task.createdByName }}
-                    </span>
-
-                  </div>
-
-                </td>
-
-
-                <!-- ASSIGNED TO -->
-
-                <td>
-
-                  <div class="person-info">
-
-                    <span class="person-avatar">
-                      {{ task.assignedToName.charAt(0).toUpperCase() }}
-                    </span>
-
-                    <span>
-                      {{ task.assignedToName || 'Unassigned' }}
-                    </span>
-
-                  </div>
-
-                </td>
-
-
-                <!-- DEADLINE -->
-
-                <td>
-
-                  @if (task.dueDate) {
-
-                    <span class="deadline">
-                      {{ task.dueDate | date:'dd MMM yyyy' }}
-                    </span>
-
-                  }
-                  @else {
-
-                    <span class="no-value">
-                      No deadline
-                    </span>
-
-                  }
-
-                </td>
-
-
-                <!-- STATUS -->
-
-                <td>
-
-                  @if (canChangeStatus(task)) {
-
-                    <select
-                      class="status-select"
-                      [value]="task.status"
-                      [disabled]="updatingStatusId === task.id"
-                      (change)="changeStatus(task, $event)"
-                    >
-
-                      <option value="1">Pending</option>
-                      <option value="2">In Process</option>
-                      <option value="3">Completed</option>
-
-                    </select>
-
-                  }
-                  @else {
-
-                    <span
-                      class="status-badge"
-                      [class]="getStatusClass(task.status)"
-                    >
-                      {{ getStatusText(task.status) }}
-                    </span>
-
-                  }
-
-                </td>
-
-
-                <!-- ACTIONS -->
-
-                <td>
-
-                  <div class="actions">
-
-                    @if (canEditTask(task)) {
-
-                      <button
-                        type="button"
-                        class="action-button edit"
-                        (click)="editTask(task)"
-                      >
-                        Edit
-                      </button>
-
-                    }
-
-                    @if (canDeleteTask(task)) {
-
-                      <button
-                        type="button"
-                        class="action-button delete"
-                        [disabled]="deletingTaskId === task.id"
-                        (click)="deleteTask(task)"
-                      >
-
-                        @if (deletingTaskId === task.id) {
-                          Deleting...
-                        }
-                        @else {
-                          Delete
-                        }
-
-                      </button>
-
-                    }
-
-                    @if (
-                      !canEditTask(task) &&
-                      !canDeleteTask(task)
-                    ) {
-
-                      <span class="view-only">
-                        View Only
-                      </span>
-
-                    }
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            }
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    }
-    @else {
-
-      <div class="empty-state">
-
-        <div class="empty-icon">✓</div>
-
-        <h2>No Tasks Found</h2>
-
-        <p>
-          No tasks match your current search or filter.
-        </p>
-
-      </div>
-
-    }
-
-  }
-
-
-  <!-- ================= EDIT MODAL ================= -->
-
-  @if (showEditForm) {
-
-    <div
-      class="modal-overlay"
-      (click)="closeEditForm()"
-    >
-
-      <div
-        class="task-modal"
-        (click)="$event.stopPropagation()"
-      >
-
-        <div class="modal-header">
-
-          <div>
-
-            <h2>Edit Task</h2>
-
-            <p>
-              Update task information and assignment.
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            class="close-button"
-            (click)="closeEditForm()"
-            [disabled]="saving()"
-          >
-            ×
-          </button>
-
+    <div class="page-header">
+        <div>
+            <h1>All Tasks</h1>
+            <p>View and manage tasks according to your permissions.</p>
         </div>
-
-
-        <!-- FORM -->
-
-        <form
-          [formGroup]="taskForm"
-          (ngSubmit)="saveTask()"
-          class="task-form"
-        >
-
-          @if (formError()) {
-
-            <div class="form-error">
-              {{ formError() }}
-            </div>
-
-          }
-
-
-          <!-- EDITABLE FIELDS -->
-
-          <div class="editable-section">
-
-            <div class="section-title">
-              Task Details
-            </div>
-
-            <div class="section-description">
-              You have permission to modify these task fields.
-            </div>
-
-
-            <!-- TITLE -->
-
-            <div class="form-group">
-
-              <label>
-                Title <span>*</span>
-              </label>
-
-              <input
-                type="text"
-                formControlName="title"
-                maxlength="200"
-                placeholder="Enter task title"
-              />
-
-              @if (isFieldInvalid('title')) {
-
-                <small class="field-error">
-                  Title is required.
-                </small>
-
-              }
-
-            </div>
-
-
-            <!-- DESCRIPTION -->
-
-            <div class="form-group">
-
-              <label>Description</label>
-
-              <textarea
-                formControlName="description"
-                rows="4"
-                maxlength="5000"
-                placeholder="Enter task description"
-              ></textarea>
-
-            </div>
-
-
-            <!-- DEADLINE -->
-
-            <div class="form-group">
-
-              <label>Deadline</label>
-
-              <input
-                type="date"
-                formControlName="dueDate"
-                [min]=" todayDate"
-              />
-
-            </div>
-
-
-            <!-- ASSIGNED TO -->
-
-            <div class="form-group">
-
-              <label>Assigned To</label>
-
-              <select
-                formControlName="assignedToId"
-              >
-
-                <option [ngValue]="null">
-                  Unassigned
-                </option>
-
-                @for (
-                  user of assignableUsers();
-                  track user.id
-                ) {
-
-                  <option [ngValue]="user.id">
-                    {{ user.name }} — {{ user.email }}
-                  </option>
-
-                }
-
-              </select>
-
-            </div>
-
-          </div>
-
-
-          <!-- INFORMATION -->
-
-          <div class="task-information">
-
-            <div class="info-item">
-
-              <span>Created By</span>
-
-              <strong>
-                {{
-                  tasks().find(
-                    t => t.id === editingTaskId
-                  )?.createdByName
-                }}
-              </strong>
-
-            </div>
-
-            <div class="info-item">
-
-              <span>Current Status</span>
-
-              <strong>
-                {{
-                  getStatusText(
-                    tasks().find(
-                      t => t.id === editingTaskId
-                    )?.status ?? 0
-                  )
-                }}
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          <!-- ACTIONS -->
-
-          <div class="form-actions">
-
-            <button
-              type="button"
-              class="cancel-button"
-              (click)="closeEditForm()"
-              [disabled]="saving()"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              class="save-button"
-              [disabled]="saving()"
-            >
-
-              @if (saving()) {
-                Saving...
-              }
-              @else {
-                Update Task
-              }
-
-            </button>
-
-          </div>
-
-        </form>
-
-      </div>
-
+        <div class="access-info">
+            <span>YOUR ACCESS</span>
+            <strong>{{ getAccessText() }}</strong>
+        </div>
     </div>
-
-  }
-
+    <div class="permission-info">
+        <div class="permission-icon">ⓘ</div>
+        <div>
+            <strong>Task permissions</strong>
+            @if (auth.isMasterAdmin()) { <p> You have full access. You can edit, assign, update status and delete tasks.
+            </p> }
+            @else if (auth.canWriteUsers()) {
+            <p> You can edit title, description, deadline, assignment, status and delete tasks. </p> }
+            @else if (auth.canReadUsers()) {
+            <p> You have view-only access. You can view all tasks but cannot edit or delete them. </p> }
+        </div>
+    </div>
+    <div class="toolbar">
+        <div class="search-box">
+            <span>🔍</span>
+            <input type="text" placeholder="Search tasks, users..." [ngModel]="searchText()"
+                (ngModelChange)="onSearchChange($event)" />
+        </div>
+        <select class="status-filter" [ngModel]="statusFilter()" (ngModelChange)="onStatusChange($event)">
+            <option value="all">All Status</option>
+            <option value="1">Pending</option>
+            <option value="2">In Process</option>
+            <option value="3">Completed</option>
+        </select>
+        <button type="button" class="refresh-button" (click)="loadTasks()" [disabled]="loading()">
+            ↻ Refresh
+        </button>
+    </div>
+    @if (errorMessage()) { <div class="error-message"> {{ errorMessage() }} </div> }
+    @if (loading()) {
+    <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading tasks...</p>
+    </div>
+    }
+    @if (!loading() && !errorMessage()) {
+    @if (filteredTasks().length > 0) {
+    <div class="task-table-container">
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Created By</th>
+                    <th>Assigned To</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for ( task of filteredTasks(); track task.id) {
+                <tr>
+                    <td>
+                        <div class="task-info">
+                            <strong> {{ task.title }} </strong>
+                            @if (task.description) { <span> {{ task.description }} </span> }
+                        </div>
+                    </td>
+                    <td>
+                        <div class="person-info">
+                            <span class="person-avatar"> {{ task.createdByName.charAt(0).toUpperCase() }}
+                            </span>
+                            <span> {{ task.createdByName }} </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="person-info">
+                            <span class="person-avatar">
+                                {{ task.assignedToName.charAt(0).toUpperCase() }}
+                            </span>
+                            <span> {{ task.assignedToName || 'Unassigned' }} </span>
+                        </div>
+                    </td>
+                    <td>
+                        @if (task.dueDate) { <span class="deadline"> {{ task.dueDate | date:'dd MMM yyy' }}
+                        </span> }
+                        @else { <span class="no-value"> No deadline </span> }
+                    </td>
+                    <td>
+                        @if (canChangeStatus(task)) {
+                        <select class="status-select" [value]="task.status" [disabled]="updatingStatusId === task.id"
+                            (change)="changeStatus(task, $event)">
+                            <option value="1">Pending</option>
+                            <option value="2">In Process</option>
+                            <option value="3">Completed</option>
+                        </select> }
+                        @else {
+                        <span class="status-badge" [class]="getStatusClass(task.status)">
+                            {{ getStatusText(task.status) }}
+                        </span>
+                        }
+                    </td>
+                    <td>
+                        <div class="actions">
+                            @if (canEditTask(task)) {
+                            <button type="button" class="action-button edit" (click)="editTask(task)">
+                                Edit
+                            </button> }
+                            @if (canDeleteTask(task)) {
+                            <button type="button" class="action-button delete" [disabled]="deletingTaskId === task.id"
+                                (click)="deleteTask(task)">
+                                @if (deletingTaskId === task.id) { Deleting... }
+                                @else { Delete }
+                            </button>
+                            }
+                            @if ( !canEditTask(task) && !canDeleteTask(task) ) { <span class="view-only"> View Only
+                            </span> }
+                        </div>
+                    </td>
+                </tr> }
+            </tbody>
+        </table>
+    </div> }
+    @else {
+    <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h2>No Tasks Found</h2>
+        <p> No tasks match your current search or filter. </p>
+    </div> }
+    }
+    @if (showEditForm) {
+    <div class="modal-overlay" (click)="closeEditForm()">
+        <div class="task-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h2>Edit Task</h2>
+                    <p> Update task information and assignment. </p>
+                </div>
+                <button type="button" class="close-button" (click)="closeEditForm()" [disabled]="saving()">
+                    ×
+                </button>
+            </div>
+            <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
+                @if (formError()) { <div class="form-error"> {{ formError() }} </div> }
+                <div class="editable-section">
+                    <div class="section-title"> Task Details </div>
+                    <div class="section-description"> You have permission to modify these task fields. </div>
+                    <div class="form-group">
+                        <label> Title <span>*</span> </label>
+                        <input type="text" formControlName="title" maxlength="200" placeholder="Enter task title" />
+                        @if (isFieldInvalid('title')) { <small class="field-error"> Title is required. </small> }
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea formControlName="description" rows="4" maxlength="5000"
+                            placeholder="Enter task description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline</label>
+                        <input type="date" formControlName="dueDate" [min]=" todayDate" />
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To</label>
+                        <select formControlName="assignedToId">
+                            <option [ngValue]="null"> Unassigned </option>
+                            @for ( user of assignableUsers(); track user.id ) {
+                            <option [ngValue]="user.id"> {{ user.name }} — {{ user.email }} </option> }
+                        </select>
+                    </div>
+                </div>
+                <div class="task-information">
+                    <div class="info-item">
+                        <span>Created By</span>
+                        <strong> {{ tasks().find( t => t.id === editingTaskId )?.createdByName }} </strong>
+                    </div>
+                    <div class="info-item">
+                        <span>Current Status</span>
+                        <strong> {{ getStatusText( tasks().find( t => t.id === editingTaskId)?.status ?? 0 ) }}
+                        </strong>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" (click)="closeEditForm()" [disabled]="saving()"> Cancel
+                    </button>
+                    <button type="submit" class="save-button" [disabled]="saving()">
+                        @if (saving()) { Saving... }
+                        @else { Update Task }
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div> }
 </div>
