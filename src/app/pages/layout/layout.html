@@ -1,0 +1,75 @@
+<div class="app-layout" [class.sidebar-closed]="!sidebarOpen">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon"> TM </div>
+      <div class="logo-text">
+        <h2> Task Manager </h2>
+        <span> Management System </span>
+      </div>
+    </div>
+    <div class="user-box">
+      <div class="user-avatar"> {{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }} </div>
+      <div class="user-info">
+        <strong> {{ auth.currentUser()?.name }} </strong>
+        <span> {{ auth.currentUser()?.email }} </span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="menu-title"> MAIN MENU </div>
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="menu-item"
+        (click)="closeSidebarOnMobile()">
+        <span class="menu-icon"> ⌂ </span>
+        <span> Dashboard </span>
+      </a>
+      <a routerLink="/tasks" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="menu-item"
+        (click)="closeSidebarOnMobile()">
+        <span class="menu-icon"> ✓ </span>
+        <span> My Tasks </span>
+      </a>
+      @if (auth.canViewUsers()) {
+      <a routerLink="alltask" routerLinkActive="active" class="menu-item" (click)="closeSidebarOnMobile()">
+        <span class="menu-icon"> ☷ </span>
+        <span> All Tasks </span>
+      </a> }
+      @if (auth.canViewUsers()) {
+      <a routerLink="/users" routerLinkActive="active" class="menu-item" (click)="closeSidebarOnMobile()">
+        <span class="menu-icon"> ♙ </span>
+        <span> Users </span>
+      </a> }
+      <div class="menu-title second-title"> ACCOUNT </div>
+      <a routerLink="/profile" routerLinkActive="active" class="menu-item" (click)="closeSidebarOnMobile()">
+        <span class="menu-icon"> ◉ </span>
+        <span> Profile </span>
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      @if (auth.isMasterAdmin()) {
+      <div class="user-role"> <span class="role-dot"></span> Master Admin </div> }
+      @else if (auth.canWriteUsers()) {
+      <div class="user-role"> <span class="role-dot"></span> User Manager </div> }
+      @else if (auth.canReadUsers()) {
+      <div class="user-role"> <span class="role-dot"></span> Reader </div> }
+      @else { <div class="user-role"> <span class="role-dot"></span> User </div> }
+      <button type="button" class="logout-button" (click)="logout()">
+        <span class="logout-icon"> ↪ </span>
+        <span> Logout </span> </button>
+    </div>
+  </aside>
+  <main class="main-content">
+    <header class="top-header">
+      <button type="button" class="menu-toggle" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+        ☰
+      </button>
+      <div class="header-user">
+        <div class="header-avatar"> {{ auth.currentUser()?.name?.charAt(0)?.toUpperCase() }} </div>
+        <div class="header-user-info">
+          <strong> {{ auth.currentUser()?.name }} </strong>
+          <span> {{ auth.currentUser()?.email }} </span>
+        </div>
+      </div>
+    </header>
+    <section class="page-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

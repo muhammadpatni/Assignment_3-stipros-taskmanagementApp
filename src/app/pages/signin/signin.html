@@ -1,1 +1,83 @@
-<p>signin works!</p>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="brand-mark">T</div>
+      <h1>Create Account</h1>
+      <p>Join the Task Management System</p>
+    </div>
+
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+
+      <div class="form-group">
+        <label for="username">Name</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="Enter your name"
+          [class.invalid]="isFieldInvalid('username')"
+        />
+        @if (isFieldInvalid('username')) {
+          <small>Name is required.</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="Enter your email address"
+          [class.invalid]="isFieldInvalid('email')"
+        />
+        @if (isFieldInvalid('email')) {
+          <small>Please enter a valid email address.</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="contact">Contact Number</label>
+        <input
+          type="tel"
+          id="contact"
+          formControlName="contact"
+          placeholder="03XXXXXXXXX"
+          maxlength="11"
+          [class.invalid]="isFieldInvalid('contact')"
+        />
+        @if (isFieldInvalid('contact')) {
+          <small>Enter a valid Pakistani phone number.</small>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Create a password"
+          [class.invalid]="isFieldInvalid('password')"
+        />
+        @if (isFieldInvalid('password')) {
+          <small>Password is required.</small>
+        }
+      </div>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Creating Account...' : 'Create Account' }}
+      </button>
+
+      @if (errorMessage) {
+        <div class="error-alert">{{ errorMessage }}</div>
+      }
+
+    </form>
+
+    <div class="auth-footer">
+      <span>Already have an account?</span>
+      <a routerLink="/login">Log In</a>
+    </div>
+  </div>
+</div>

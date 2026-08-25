@@ -1,0 +1,175 @@
+<div class="tasks-page">
+    <div class="page-header">
+        <div>
+            <h1> My Tasks </h1>
+            <p> Tasks created or assigned to you </p>
+        </div>
+        <button type="button" class="create-button" (click)="createTask()"> + Create Task </button>
+    </div>
+    <div class="toolbar">
+        <div class="search-box">
+            <span class="search-icon"> 🔍 </span>
+            <input type="text" placeholder="Search tasks..." [ngModel]="searchText()"
+                (ngModelChange)="searchText.set($event)" />
+        </div>
+        <button type="button" class="refresh-button" (click)="loadMyTasks()" [disabled]="loading()">
+            ↻ Refresh
+        </button>
+    </div>
+    @if (errorMessage()) { <div class="error-message"> {{ errorMessage() }} </div> }
+    @if (loading()) {
+    <div class="loading-state">
+        <div class="spinner"></div>
+        <p> Loading tasks... </p>
+    </div> }
+    @if (!loading() && !errorMessage()) {
+    @if (filteredTasks.length > 0) {
+    <div class="task-table-container">
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Created By</th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for ( task of filteredTasks; track task.id ) {
+                <tr>
+                    <td>
+                        <div class="task-title">
+                            <strong> {{ task.title }} </strong>
+                            @if (task.description) { <span> {{ task.description }} </span> }
+                        </div>
+                    </td>
+                    <td>
+                        @if (canUpdateAssignedStatus(task)) {
+                        <select class="status-select" [ngClass]="getStatusClass(task.status)"
+                            [value]="task.status" (change)="updateTaskStatus(task, $event)">
+                            <option value="1"> Pending </option>
+                            <option value="2"> Process </option>
+                            <option value="3"> Completed </option>
+                        </select>
+                        }
+                        @else {
+                        <span class="status-badge" [class]="getStatusClass(task.status)">
+                            {{ getStatusText(task.status) }} </span> }
+                    </td>
+                    <td>
+                        @if (task.dueDate) { {{ task.dueDate | date:'dd MMM yyyy' }} }
+                        @else { <span class="no-date"> No due date </span> }
+                    </td>
+                    <td> {{ task.createdByName }} </td>
+                    <td>
+                        {{ getAssignedToDisplayName(task) }}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            @if (canEditTask(task)) {
+                            <button type="button" class="action-button edit" (click)="editTask(task)"> Edit </button> }
+                            @if (canDeleteTask(task)) {
+                            <button type="button" class="action-button delete" (click)="deleteTask(task)"
+                                [disabled]="deletingTaskId === task.id">
+                                {{ deletingTaskId === task.id ? 'Deleting...' : 'Delete' }}
+                            </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+    @else {
+    <div class="empty-state">
+        <div class="empty-icon"> ✓ </div>
+        <h2> No Tasks Found </h2>
+        <p> You currently don't have any tasks. </p>
+        <button type="button" class="create-button" (click)="createTask()"> + Create Task </button>
+    </div> }
+    }
+    @if (showCreateForm) {
+    <div class="modal-overlay" (click)="cancelCreateTask()">
+        <div class="task-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h2> {{ editingTaskId === null ? 'Create Task' : 'Edit Task' }} </h2>
+                    <p> {{ editingTaskId === null ? 'Create new task and optionally assign it.'
+                        : 'Update the task details.' }}
+                    </p>
+                </div>
+                <button type="button" class="close-button" (click)="cancelCreateTask()" [disabled]="savingTask"> ×
+                </button>
+            </div>
+            <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
+                @if (formError()) { <div class="form-error"> {{ formError() }} </div> }
+                <div class="form-group">
+                    <label for="title"> Title <span>*</span> </label>
+                    <input id="title" type="text" formControlName="title" placeholder="Enter task title"
+                        maxlength="200" />
+                    @if (isTaskFieldInvalid('title')) {
+                    <small class="field-error">
+                        @if ( taskForm.get('title')?.errors?.['required'] ) { Title is required. }
+                        @else if ( taskForm.get('title')?.errors?.['maxlength'] ) {
+                        Title cannot exceed 200 characters. }
+                    </small>
+                    }
+                </div>
+                <div class="form-group">
+                    <label for="description"> Description </label>
+                    <textarea id="description" formControlName="description" placeholder="Enter task description"
+                        rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="dueDate"> Due Date </label>
+                    <input id="dueDate" type="date" formControlName="dueDate" [min]="todayDate" />
+                </div>
+                <div class="form-group">
+                    <label> Assign To </label>
+                    <div class="assignee-wrapper">
+                        <input type="text" placeholder="Search by name or email..." [value]="assigneeSearch()"
+                            (input)="onAssigneeSearchChange($any($event.target).value)" (focus)="openAssigneeDropdown()"
+                            autocomplete="off" />
+                        @if ( taskForm.get('assignedToId')?.value ) {
+                        <button type="button" class="clear-assignee" (mousedown)="$event.preventDefault()"
+                            (click)="clearAssignee()"> × </button> }
+                        @if (assigneeDropdownOpen) {
+                        <div class="assignee-dropdown">
+                            @if (loadingUsers) { <div class="dropdown-message"> Loading users... </div> }
+                            @else if ( filteredAssignableUsers.length === 0 ) {
+                            <div class="dropdown-message"> No users found. </div> }
+                            @else {
+                            @for ( user of filteredAssignableUsers; track user.id ) {
+                            <button type="button" class="assignee-option" (mousedown)="$event.preventDefault()"
+                                (click)="selectAssignee(user)">
+                                <span class="assignee-avatar">
+                                    {{ user.name.charAt(0).toUpperCase() }}
+                                </span>
+                                <span class="assignee-info">
+                                    <strong> {{ user.name }} </strong> <small> {{ user.email }} </small>
+                                </span>
+                            </button> }
+                            }
+                        </div>
+                        }
+                    </div>
+                    <small class="field-hint"> Leave empty to assign the task to ourself. </small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" (click)="cancelCreateTask()" [disabled]="savingTask">
+                        Cancel </button>
+                    <button type="submit" class="save-button" [disabled]="savingTask">
+                        @if (savingTask) { Saving... }
+                        @else { {{ editingTaskId === null ? 'Create Task' : 'Update Task' }} }
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+</div>
+
