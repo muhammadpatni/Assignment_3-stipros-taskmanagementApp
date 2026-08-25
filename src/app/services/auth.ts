@@ -25,48 +25,27 @@ export class Auth {
     this.currentUser.set(null);
   }
 
-  getToken(): string | null {
-    return localStorage.getItem('access_token');
-  }
+  getToken(): string | null { return localStorage.getItem('access_token'); }
 
-  getCurrentUser(): CurrentUser | null {
-    return this.currentUser();
-  }
+  getCurrentUser(): CurrentUser | null { return this.currentUser(); }
 
-  isLoggedIn(): boolean {
-    return this.getToken() !== null && this.currentUser() !== null;
-  }
+  isLoggedIn(): boolean { return this.getToken() !== null && this.currentUser() !== null; }
 
-  isMasterAdmin(): boolean {
-    return this.currentUser()?.isMasterAdmin === true;
-  }
+  isMasterAdmin(): boolean { return this.currentUser()?.isMasterAdmin === true; }
 
-  canReadUsers(): boolean {
-    return this.currentUser()?.canReadUsers === true;
-  }
+  canReadUsers(): boolean { return this.currentUser()?.canReadUsers === true; }
 
-  canWriteUsers(): boolean {
-    return this.currentUser()?.canWriteUsers === true;
-  }
+  canWriteUsers(): boolean { return this.currentUser()?.canWriteUsers === true; }
 
   canViewUsers(): boolean {
     const user = this.currentUser();
-    return user?.isMasterAdmin === true ||
-           user?.canReadUsers === true ||
-           user?.canWriteUsers === true;
+    return user?.isMasterAdmin === true || user?.canReadUsers === true || user?.canWriteUsers === true;
   }
 
   private loadUser(): CurrentUser | null {
-
     const storedUser = localStorage.getItem('current_user');
-
-    if (!storedUser) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(storedUser) as CurrentUser;
-    }
+    if (!storedUser) { return null; }
+    try { return JSON.parse(storedUser) as CurrentUser; }
     catch {
       localStorage.removeItem('current_user');
       return null;

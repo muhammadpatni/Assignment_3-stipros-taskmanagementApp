@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { CurrentUser, LoginResponse } from '../../interfaces/interfaces';
+import { API } from '../../helpers/api';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,6 @@ import { CurrentUser, LoginResponse } from '../../interfaces/interfaces';
 export class Login {
   loading = false;
   errorMessage = '';
-  private readonly apiUrl = 'https://localhost:7253/auth';
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', Validators.required)
@@ -27,7 +27,7 @@ export class Login {
     if (this.loginForm.invalid) { this.loginForm.markAllAsTouched(); return; }
     this.loading = true;
     const loginData = this.loginForm.getRawValue();
-    this.http.post<LoginResponse>(`${this.apiUrl}/login`, loginData).subscribe({
+    this.http.post<LoginResponse>(`${API.auth}/login`, loginData).subscribe({
       next: (response) => {
         const user: CurrentUser = {
           userId: response.userId,

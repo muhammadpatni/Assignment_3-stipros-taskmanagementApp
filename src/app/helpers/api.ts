@@ -6,5 +6,7 @@ export const API = {
   users: `${API_URL}/Users`,
 } as const;
 
-export const authHeaders = (token: string | null) => token ? { Authorization: `Bearer ${token}` } : {};
+export const authHeaders = (token: string | null): Record<string, string> => ({
+  Authorization: `Bearer ${token ?? ''}`,
+});
 export const getErrorMessage = (error: any, fallback: string): string => error?.error?.message || error?.error || fallback;

@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { RegisterRequest } from '../../interfaces/interfaces';
+import { API, getErrorMessage } from '../../helpers/api';
 
 @Component({
   selector: 'app-signin',
@@ -33,13 +35,14 @@ export class Signin {
     this.signupForm.markAllAsTouched();
     if (this.signupForm.valid) {
       this.loading = true;
-      const signupData = {
-        name: this.signupForm.value.username,
-        email: this.signupForm.value.email,
-        contact: this.signupForm.value.contact,
-        password: this.signupForm.value.password
+      const formValue = this.signupForm.getRawValue();
+      const signupData: RegisterRequest = {
+        name: formValue.username ?? '',
+        email: formValue.email ?? '',
+        contact: formValue.contact ?? '',
+        password: formValue.password ?? ''
       };
-      this.http.post<any>('https://localhost:7253/Auth/register', signupData).subscribe({
+      this.http.post<void>(`${API.auth}/register`, signupData).subscribe({
         next: () => {
           alert('Account created successfully.');
           this.loading = false;
@@ -48,8 +51,7 @@ export class Signin {
         error: (error) => {
           console.log('Registration failed:', error);
           this.loading = false;
-          if (error.error?.message) { alert(error.error.message); }
-          else { alert('Registration failed.'); }
+          alert(getErrorMessage(error, 'Registration failed.'));
         }
       });
     }

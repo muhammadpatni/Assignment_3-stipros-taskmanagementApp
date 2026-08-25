@@ -8,6 +8,13 @@ export interface LoginResponse {
   canWriteUsers: boolean;
 }
 
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  contact: string;
+  password: string;
+}
+
 export interface CurrentUser {
   userId: number;
   name: string;
@@ -52,13 +59,6 @@ export interface UpdateTaskRequest {
 
 export interface UpdateTaskStatusRequest {
   status: number;
-}
-
-export interface UpdateTaskRequest {
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  assignedToId: number | null;
 }
 
 export interface UserResponse {

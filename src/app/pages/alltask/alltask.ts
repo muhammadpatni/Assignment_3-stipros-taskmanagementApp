@@ -3,14 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { TaskResponse, AssignableUser, CreateTaskRequest, UpdateTaskRequest, UpdateTaskStatusRequest } from '../../interfaces/interfaces';
+import { TaskResponse, AssignableUser, UpdateTaskRequest, UpdateTaskStatusRequest } from '../../interfaces/interfaces';
 import { Auth } from '../../services/auth';
+import { API, authHeaders } from '../../helpers/api';
+import { canChangeTaskStatus, canManageTasks } from '../../helpers/permissions';
+import { filterTasks, taskStatusClass, taskStatusText, toDateInput } from '../../helpers/task';
 
 @Component({
   selector: 'app-alltask',
-  imports: [CommonModule,
-    FormsModule,
-    ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './alltask.html',
   styleUrl: './alltask.css',
 })
@@ -18,9 +19,6 @@ export class AllTask implements OnInit {
 
   public auth = inject(Auth);
   private http = inject(HttpClient);
-
-  private readonly taskApi = 'https://localhost:7253/Task';
-  private readonly userApi = 'https://localhost:7253/Users';
 
   tasks = signal<TaskResponse[]>([]);
   filteredTasks = signal<TaskResponse[]>([]);
@@ -48,59 +46,17 @@ export class AllTask implements OnInit {
     if (this.canManageTasks()) { this.loadUsers(); }
   }
 
-  /* =========================
-     PERMISSIONS
-  ========================= */
+  canViewTasks(): boolean { return this.auth.canViewUsers(); }
 
-  canViewTasks(): boolean {
-    const user = this.auth.getCurrentUser();
-    if (!user) { return false; }
-    return (user.isMasterAdmin || user.canReadUsers || user.canWriteUsers);
-  }
+  canManageTasks(): boolean { return canManageTasks(this.auth.getCurrentUser()); }
 
-  canManageTasks(): boolean {
-    const user = this.auth.getCurrentUser();
-
-    if (!user) {
-      return false;
-    }
-
-    return (
-      user.isMasterAdmin ||
-      user.canWriteUsers
-    );
-  }
-
-  canEditTask(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-
-    if (!user) {
-      return false;
-    }
-
-    return (
-      user.isMasterAdmin ||
-      user.canWriteUsers
-    );
-  }
+  canEditTask(task: TaskResponse): boolean { return canManageTasks(this.auth.getCurrentUser()); }
 
   canChangeStatus(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-
-    if (!user) {
-      return false;
-    }
-
-    return (
-      user.isMasterAdmin || user.canWriteUsers || task.createdById === user.userId || task.assignedToId == user.userId
-    );
+    return canChangeTaskStatus(this.auth.getCurrentUser(), task);
   }
 
-  canDeleteTask(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-    if (!user) { return false; }
-    return (user.isMasterAdmin || user.canWriteUsers);
-  }
+  canDeleteTask(task: TaskResponse): boolean { return canManageTasks(this.auth.getCurrentUser()); }
 
   getAccessText(): string {
     const user = this.auth.getCurrentUser();
@@ -111,399 +67,132 @@ export class AllTask implements OnInit {
     return 'Limited Access';
   }
 
-  /* =========================
-     LOAD TASKS
-  ========================= */
-
   loadTasks(): void {
-
     this.loading.set(true);
     this.errorMessage.set('');
-
-    const token = this.auth.getToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    this.http
-      .get<TaskResponse[]>(
-        `${this.taskApi}/all`,
-        { headers }
-      )
-      .subscribe({
-
-        next: response => {
-
-          this.tasks.set(response);
-          this.applyFilters();
-          this.loading.set(false);
-
-        },
-
-        error: error => {
-
-          console.error(
-            'Failed to load tasks:',
-            error
-          );
-
-          this.errorMessage.set(
-            error?.error?.message ||
-            'Unable to load tasks.'
-          );
-
-          this.loading.set(false);
-
-        }
-
-      });
+    this.http.get<TaskResponse[]>(`${API.tasks}/all`, { headers: authHeaders(this.auth.getToken()) }
+    ).subscribe({
+      next: response => {
+        this.tasks.set(response);
+        this.applyFilters();
+        this.loading.set(false);
+      },
+      error: error => {
+        console.error('Failed to load tasks:', error);
+        this.errorMessage.set(error?.error?.message || 'Unable to load tasks.');
+        this.loading.set(false);
+      }
+    });
   }
-
-  /* =========================
-     LOAD USERS
-  ========================= */
-
   loadUsers(): void {
-
-    const token = this.auth.getToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    this.http
-      .get<AssignableUser[]>(
-        this.userApi,
-        { headers }
-      )
-      .subscribe({
-
-        next: response => {
-          this.assignableUsers.set(response);
-        },
-
-        error: error => {
-          console.error(
-            'Failed to load users:',
-            error
-          );
-        }
-
-      });
+    this.http.get<AssignableUser[]>(API.users, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+      next: response => { this.assignableUsers.set(response); },
+      error: error => { console.error('Failed to load users:', error); }
+    });
   }
-
-  /* =========================
-     SEARCH / FILTER
-  ========================= */
 
   onSearchChange(value: string): void {
-
     this.searchText.set(value);
     this.applyFilters();
-
   }
 
   onStatusChange(value: string): void {
-
     this.statusFilter.set(value);
     this.applyFilters();
-
   }
 
   applyFilters(): void {
-
-    const search =
-      this.searchText()
-        .trim()
-        .toLowerCase();
-
-    const status =
-      this.statusFilter();
-
-    const result =
-      this.tasks().filter(task => {
-
-        const matchesSearch =
-          !search ||
-          task.title.toLowerCase().includes(search) ||
-          (task.description ?? '')
-            .toLowerCase()
-            .includes(search) ||
-          task.createdByName
-            .toLowerCase()
-            .includes(search) ||
-          task.assignedToName
-            .toLowerCase()
-            .includes(search);
-
-        const matchesStatus =
-          status === 'all' ||
-          Number(task.status) === Number(status);
-
-        return matchesSearch && matchesStatus;
-
-      });
-
-    this.filteredTasks.set(result);
-
+    this.filteredTasks.set(filterTasks(this.tasks(), this.searchText(), this.statusFilter()));
   }
 
-  /* =========================
-     EDIT
-  ========================= */
-
   editTask(task: TaskResponse): void {
-
-    if (!this.canEditTask(task)) {
-      return;
-    }
-
+    if (!this.canEditTask(task)) { return; }
     this.editingTaskId = task.id;
     this.showEditForm = true;
     this.formError.set('');
-
     this.taskForm.patchValue({
-
       title: task.title,
+      description: task.description ?? '',
+      dueDate: toDateInput(task.dueDate),
+      assignedToId: task.assignedToId
+    });
+  }
 
-      description:
-        task.description ?? '',
+  toDateLocal(date: string | null): string | null {
+    if (!date) { return null; }
+    const value = new Date(date);
+    if (Number.isNaN(value.getTime())) { return null; }
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
 
-      dueDate:
-        this.toDateLocal(task.dueDate),
+    return `${year}-${month}-${day}`;
+  }
 
-      assignedToId:
-        task.assignedToId
+  saveTask(): void {
+    this.formError.set('');
+    if (this.taskForm.invalid) {
+      this.taskForm.markAllAsTouched();
+      return;
+    }
+    if (this.editingTaskId === null) { return; }
+    this.saving.set(true);
+    const value = this.taskForm.getRawValue();
+    const payload: UpdateTaskRequest = {
+      title: value.title?.trim() ?? '',
+      description: value.description?.trim() || null,
+      dueDate: value.dueDate || null,
+      assignedToId: value.assignedToId ?? null
+    };
+    this.http.put<TaskResponse>(`${API.tasks}/${this.editingTaskId}`, payload, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.closeEditForm();
+        this.loadTasks();
+      },
+      error: error => {
+        console.error('Failed to update task:', error);
+        this.saving.set(false);
+        this.formError.set(error?.error?.message || 'Unable to update task.');
+      }
+    });
+  }
 
+  changeStatus(task: TaskResponse, event: Event): void {
+    if (!this.canChangeStatus(task)) { return; }
+    const select = event.target as HTMLSelectElement;
+    const status = Number(select.value);
+    const payload: UpdateTaskStatusRequest = { status };
+    this.updatingStatusId = task.id;
+    this.http.patch<TaskResponse>(`${API.tasks}/${task.id}/status`, payload, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+      next: () => {
+        this.updatingStatusId = null;
+        this.loadTasks();
+      },
+      error: error => {
+        console.error('Failed to update status:', error);
+        this.updatingStatusId = null;
+        this.errorMessage.set(error?.error?.message || 'Unable to update task status.');
+      }
     });
 
   }
 
-  /* =========================
-     DATE
-  ========================= */
-
-  toDateLocal(date: string | null): string | null {
-  if (!date) {
-    return null;
-  }
-
-  const value = new Date(date);
-
-  if (Number.isNaN(value.getTime())) {
-    return null;
-  }
-
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-  /* =========================
-     SAVE TASK
-  ========================= */
-
-  saveTask(): void {
-
-    this.formError.set('');
-
-    if (this.taskForm.invalid) {
-
-      this.taskForm.markAllAsTouched();
-      return;
-
-    }
-
-    if (this.editingTaskId === null) {
-      return;
-    }
-
-    this.saving.set(true);
-
-    const value =
-      this.taskForm.getRawValue();
-
-    const payload: UpdateTaskRequest = {
-
-      title:
-        value.title?.trim() ?? '',
-
-      description:
-        value.description?.trim() || null,
-
-      dueDate:
-        value.dueDate || null,
-
-      assignedToId:
-        value.assignedToId ?? null
-
-    };
-
-    const token = this.auth.getToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    this.http
-      .put<TaskResponse>(
-        `${this.taskApi}/${this.editingTaskId}`,
-        payload,
-        { headers }
-      )
-      .subscribe({
-
-        next: () => {
-
-          this.saving.set(false);
-          this.closeEditForm();
-          this.loadTasks();
-
-        },
-
-        error: error => {
-
-          console.error(
-            'Failed to update task:',
-            error
-          );
-
-          this.saving.set(false);
-
-          this.formError.set(
-            error?.error?.message ||
-            'Unable to update task.'
-          );
-
-        }
-
-      });
-
-  }
-
-  /* =========================
-     STATUS
-  ========================= */
-
-  changeStatus(
-    task: TaskResponse,
-    event: Event
-  ): void {
-
-    if (!this.canChangeStatus(task)) {
-      return;
-    }
-
-    const select =
-      event.target as HTMLSelectElement;
-
-    const status =
-      Number(select.value);
-
-    const payload: UpdateTaskStatusRequest = {
-      status
-    };
-
-    this.updatingStatusId = task.id;
-
-    const token = this.auth.getToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    this.http
-      .patch<TaskResponse>(
-        `${this.taskApi}/${task.id}/status`,
-        payload,
-        { headers }
-      )
-      .subscribe({
-
-        next: () => {
-
-          this.updatingStatusId = null;
-          this.loadTasks();
-
-        },
-
-        error: error => {
-
-          console.error(
-            'Failed to update status:',
-            error
-          );
-
-          this.updatingStatusId = null;
-
-          this.errorMessage.set(
-            error?.error?.message ||
-            'Unable to update task status.'
-          );
-
-        }
-
-      });
-
-  }
-
-  /* =========================
-     DELETE
-  ========================= */
-
   deleteTask(task: TaskResponse): void {
-
-    if (!this.canDeleteTask(task)) {
-      return;
-    }
-
+    if (!this.canDeleteTask(task)) { return; }
     this.deletingTaskId = task.id;
-
-    const token = this.auth.getToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`
-    };
-
-    this.http
-      .delete(
-        `${this.taskApi}/${task.id}`,
-        { headers }
-      )
-      .subscribe({
-
-        next: () => {
-
-          this.deletingTaskId = null;
-          this.loadTasks();
-
-        },
-
-        error: error => {
-
-          console.error(
-            'Failed to delete task:',
-            error
-          );
-
-          this.deletingTaskId = null;
-
-          this.errorMessage.set(
-            error?.error?.message ||
-            'Unable to delete task.'
-          );
-
-        }
-
-      });
-
+    this.http.delete(`${API.tasks}/${task.id}`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+      next: () => {
+        this.deletingTaskId = null;
+        this.loadTasks();
+      },
+      error: error => {
+        console.error('Failed to delete task:', error);
+        this.deletingTaskId = null;
+        this.errorMessage.set(error?.error?.message || 'Unable to delete task.');
+      }
+    });
   }
-
-  /* =========================
-     CLOSE FORM
-  ========================= */
 
   closeEditForm(): void {
     if (this.saving()) { return; }
@@ -519,65 +208,11 @@ export class AllTask implements OnInit {
     });
   }
 
-  /* =========================
-     STATUS TEXT
-  ========================= */
+  getStatusText = taskStatusText;
+  getStatusClass = taskStatusClass;
 
-  getStatusText(status: number): string {
-
-    switch (status) {
-
-      case 1:
-        return 'Pending';
-
-      case 2:
-        return 'In Process';
-
-      case 3:
-        return 'Completed';
-
-      default:
-        return 'Unknown';
-
-    }
-
-  }
-
-  getStatusClass(status: number): string {
-
-    switch (status) {
-
-      case 1:
-        return 'status-pending';
-
-      case 2:
-        return 'status-process';
-
-      case 3:
-        return 'status-completed';
-
-      default:
-        return '';
-
-    }
-
-  }
-
-  isFieldInvalid(
-    fieldName: string
-  ): boolean {
-
-    const control =
-      this.taskForm.get(fieldName);
-
-    return !!(
-      control &&
-      control.invalid &&
-      (
-        control.touched ||
-        control.dirty
-      )
-    );
-
+  isFieldInvalid(fieldName: string): boolean {
+    const control = this.taskForm.get(fieldName);
+    return !!(control && control.invalid && (control.touched || control.dirty));
   }
 }

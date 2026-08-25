@@ -1,10 +1,13 @@
-import { Component, inject, OnInit, Signal, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, Validators, FormControl } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { TaskResponse, AssignableUser, CreateTaskRequest, UpdateTaskRequest } from '../../interfaces/interfaces';
+import { TaskResponse, AssignableUser, CreateTaskRequest } from '../../interfaces/interfaces';
 import { Auth } from '../../services/auth';
+import { API, authHeaders, getErrorMessage } from '../../helpers/api';
+import { canChangeTaskStatus, canDeleteTask, canEditTask } from '../../helpers/permissions';
+import { filterTasks, taskStatusClass, taskStatusText } from '../../helpers/task';
 
 @Component({
   selector: 'app-tasks',
@@ -39,9 +42,6 @@ export class Tasks implements OnInit {
     assignedToId: new FormControl<number | null>(null)
   });
 
-  private readonly apiUrl = 'https://localhost:7253/Task';
-  private readonly usersApiUrl = 'https://localhost:7253/Users';
-
   public auth = inject(Auth);
   private http = inject(HttpClient);
 
@@ -50,40 +50,22 @@ export class Tasks implements OnInit {
   loadMyTasks(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    const token = this.auth.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<TaskResponse[]>(`${this.apiUrl}/my`, { headers }).subscribe({
+    this.http.get<TaskResponse[]>(`${API.tasks}/my`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
       next: (response) => {
         this.tasks.set(response);
         this.loading.set(false);
       },
       error: (error) => {
         console.error('Failed to load tasks:', error);
-        this.errorMessage.set(error?.error?.message || 'Unable to load tasks. lease try again.');
+        this.errorMessage.set(getErrorMessage(error, 'Unable to load tasks. Please try again.'));
         this.loading.set(false);
       }
     });
   }
 
-  get filteredTasks(): TaskResponse[] {
-    const search = this.searchText().trim().toLowerCase();
-    if (!search) { return this.tasks(); }
-    return this.tasks().filter(task =>
-      task.title.toLowerCase().includes(search) || (task.description ?? '').toLowerCase().includes(search) || task.assignedToName.toLowerCase().includes(search) || task.createdByName.toLowerCase().includes(search));
-  }
+  get filteredTasks(): TaskResponse[] { return filterTasks(this.tasks(), this.searchText()); }
 
-  getStatusText(status: number): string {
-    switch (status) {
-      case 1:
-        return 'Pending';
-      case 2:
-        return 'Process';
-      case 3:
-        return 'Completed';
-      default:
-        return 'Unknown';
-    }
-  }
+  getStatusText = taskStatusText;
 
   getAssignedToDisplayName(task: TaskResponse): string {
     const currentUser = this.auth.getCurrentUser();
@@ -91,37 +73,14 @@ export class Tasks implements OnInit {
     return task.assignedToName;
   }
 
-  getStatusClass(status: number): string {
-    switch (status) {
-      case 1:
-        return 'status-pending';
-      case 2:
-        return 'status-process';
-      case 3:
-        return 'status-completed';
-      default:
-        return '';
-    }
-  }
+  getStatusClass = taskStatusClass;
 
-  canEditTask(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-    if (!user) { return false; }
-    return (task.createdById === user.userId || user.isMasterAdmin || user.canWriteUsers);
-  }
+  canEditTask(task: TaskResponse): boolean { return canEditTask(this.auth.getCurrentUser(), task); }
 
-  canChangeStatus(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-    if (!user) { return false; }
-    return (task.createdById === user.userId || task.assignedToId === user.userId || user.isMasterAdmin || user.canWriteUsers);
-  }
+  canChangeStatus(task: TaskResponse): boolean { return canChangeTaskStatus(this.auth.getCurrentUser(), task); }
 
-  canDeleteTask(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-    if (!user) { return false; }
-    return (task.createdById === user.userId || user.isMasterAdmin || user.canWriteUsers);
-  }
-  
+  canDeleteTask(task: TaskResponse): boolean { return canDeleteTask(this.auth.getCurrentUser(), task); }
+
   createTask(): void {
     this.editingTaskId = null;
     this.showCreateForm = true;
@@ -154,9 +113,7 @@ export class Tasks implements OnInit {
   loadAssignableUsers(): void {
     this.loadingUsers = true;
     this.formError.set('');
-    const token = this.auth.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<AssignableUser[]>(`${this.usersApiUrl}/assignable`, { headers }).subscribe({
+    this.http.get<AssignableUser[]>(`${API.users}/assignable`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
       next: (response) => {
         const currentUser = this.auth.getCurrentUser();
         let users = [...response];
@@ -234,10 +191,9 @@ export class Tasks implements OnInit {
       dueDate: formValue.dueDate || null,
       assignedToId: formValue.assignedToId || null
     };
-    const token = this.auth.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
+    const headers = authHeaders(this.auth.getToken());
     if (this.editingTaskId !== null) {
-      this.http.put<TaskResponse>(`${this.apiUrl}/${this.editingTaskId}`, payload, { headers }).subscribe({
+      this.http.put<TaskResponse>(`${API.tasks}/${this.editingTaskId}`, payload, { headers }).subscribe({
         next: () => {
           this.savingTask = false;
           this.showCreateForm = false;
@@ -255,7 +211,7 @@ export class Tasks implements OnInit {
       });
       return;
     }
-    this.http.post<TaskResponse>(this.apiUrl, payload, { headers }).subscribe({
+    this.http.post<TaskResponse>(API.tasks, payload, { headers }).subscribe({
       next: () => {
         this.savingTask = false;
         this.showCreateForm = false;
@@ -292,9 +248,8 @@ export class Tasks implements OnInit {
 
   deleteTask(task: TaskResponse): void {
     this.deletingTaskId = task.id;
-    const token = this.auth.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.delete(`${this.apiUrl}/${task.id}`, { headers })
+    const headers = authHeaders(this.auth.getToken());
+    this.http.delete(`${API.tasks}/${task.id}`, { headers })
       .subscribe({
         next: () => {
           this.deletingTaskId = null;
@@ -318,9 +273,8 @@ export class Tasks implements OnInit {
     const select = event.target as HTMLSelectElement;
     const newStatus = Number(select.value);
     if (!newStatus || newStatus === task.status) { return; }
-    const token = this.auth.getToken();
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.patch<TaskResponse>(`${this.apiUrl}/${task.id}/status`, { status: newStatus }, { headers })
+    const headers = authHeaders(this.auth.getToken());
+    this.http.patch<TaskResponse>(`${API.tasks}/${task.id}/status`, { status: newStatus }, { headers })
       .subscribe({
         next: (response) => {
           this.tasks.update(tasks => tasks.map(item => item.id === task.id ? response : item));
@@ -331,7 +285,4 @@ export class Tasks implements OnInit {
         }
       });
   }
-
-
 }
-
