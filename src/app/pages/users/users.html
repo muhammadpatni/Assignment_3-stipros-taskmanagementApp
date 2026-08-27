@@ -1,637 +1,196 @@
 <div class="users-page">
-
-  <!-- ================= HEADER ================= -->
-
   <div class="page-header">
-
     <div>
       <h1>Users</h1>
       <p>Manage users and their permissions</p>
     </div>
-
-    @if (canCreateUser()) {
-      <button
-        type="button"
-        class="create-button"
-        (click)="createUser()">
-        + Create User
-      </button>
+    @if (canCreateUser()) { <button type="button" class="create-button" (click)="createUser()"> + Create User </button>
     }
-
   </div>
-
-
-  <!-- ================= TOOLBAR ================= -->
-
   <div class="toolbar">
-
     <div class="search-box">
-
       <span class="search-icon">🔍</span>
-
-      <input
-        type="text"
-        placeholder="Search users..."
-        [ngModel]="searchText()"
-        (ngModelChange)="onSearchChange($event)"
-      />
-
+      <input type="text" placeholder="Search users..." [ngModel]="searchText()"
+        (ngModelChange)="onSearchChange($event)" />
     </div>
-
-    <button
-      type="button"
-      class="refresh-button"
-      (click)="loadUsers()"
-      [disabled]="loading()">
-
+    <button type="button" class="refresh-button" (click)="loadUsers()" [disabled]="loading()">
       ↻ Refresh
-
     </button>
-
   </div>
-
-
-  <!-- ================= ERROR ================= -->
-
-  @if (errorMessage()) {
-
-    <div class="error-message">
-      {{ errorMessage() }}
-    </div>
-
-  }
-
-
-  <!-- ================= LOADING ================= -->
-
+  @if (errorMessage()) { <div class="error-message"> {{ errorMessage() }} </div> }
   @if (loading()) {
-
-    <div class="loading-state">
-
-      <div class="spinner"></div>
-
-      <p>Loading users...</p>
-
-    </div>
-
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading users...</p>
+  </div>
   }
-
-
-  <!-- ================= TABLE ================= -->
-
   @if (!loading() && !errorMessage()) {
-
-    @if (filteredUsers().length > 0) {
-
-      <div class="user-table-container">
-
-        <table class="user-table">
-
-          <thead>
-
-            <tr>
-              <th>User</th>
-              <th>Email</th>
-              <th>Contact</th>
-              <th>Access</th>
-              <th>Actions</th>
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            @for (user of filteredUsers(); track user.id) {
-
-              <tr>
-
-                <!-- ================= USER ================= -->
-
-                <td>
-
-                  <div class="user-info">
-
-                    <div class="user-avatar">
-                      {{ user.name.charAt(0).toUpperCase() }}
-                    </div>
-
-                    <div class="user-details">
-
-                      <div class="user-name-row">
-
-                        <strong class="user-name">
-                          {{ user.name }}
-                        </strong>
-
-                        @if (isCurrentUser(user)) {
-
-                          <span class="self-label">
-                            You
-                          </span>
-
-                        }
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </td>
-
-
-                <!-- ================= EMAIL ================= -->
-
-                <td>
-
-                  <span class="user-email-table">
-                    {{ user.email }}
-                  </span>
-
-                </td>
-
-
-                <!-- ================= CONTACT ================= -->
-
-                <td>
-
-                  @if (user.contact) {
-
-                    <span class="user-contact">
-                      {{ user.contact }}
-                    </span>
-
-                  }
-                  @else {
-
-                    <span class="no-value">
-                      —
-                    </span>
-
-                  }
-
-                </td>
-
-
-                <!-- ================= ACCESS ================= -->
-
-                <td>
-
-                  <div class="access-list">
-
-                    @if (user.isMasterAdmin) {
-
-                      <span class="access-badge master">
-                        <span class="badge-dot"></span>
-                        Master Admin
-                      </span>
-
-                    }
-                    @else {
-
-                      @if (user.canReadUsers) {
-
-                        <span class="access-badge read">
-                          <span class="badge-dot"></span>
-                          Read
-                        </span>
-
-                      }
-
-                      @if (user.canWriteUsers) {
-
-                        <span class="access-badge write">
-                          <span class="badge-dot"></span>
-                          Write
-                        </span>
-
-                      }
-
-                      @if (
-                        !user.canReadUsers &&
-                        !user.canWriteUsers
-                      ) {
-
-                        <span class="access-badge normal">
-                          <span class="badge-dot"></span>
-                          Normal User
-                        </span>
-
-                      }
-
-                    }
-
-                  </div>
-
-                </td>
-
-
-                <!-- ================= ACTIONS ================= -->
-
-                <td>
-
-                  <div class="actions">
-
-                    @if (canEditUser(user)) {
-
-                      <button
-                        type="button"
-                        class="action-button edit"
-                        (click)="editUser(user)">
-                        Edit
-                      </button>
-
-                    }
-
-                    @if (canDeleteUser(user)) {
-
-                      <button
-                        type="button"
-                        class="action-button delete"
-                        (click)="deleteUser(user)"
-                        [disabled]="deletingUserId === user.id">
-
-                        @if (deletingUserId === user.id) {
-                          Deleting...
-                        }
-                        @else {
-                          Delete
-                        }
-
-                      </button>
-
-                    }
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            }
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    }
-    @else {
-
-      <div class="empty-state">
-
-        <div class="empty-icon">
-          👤
-        </div>
-
-        <h2>No Users Found</h2>
-
-        <p>No users match your search.</p>
-
-        @if (canCreateUser()) {
-
-          <button
-            type="button"
-            class="create-button"
-            (click)="createUser()">
-            + Create User
-          </button>
-
-        }
-
-      </div>
-
-    }
-
-  }
-
-
-  <!-- ================================================= -->
-  <!-- CREATE / UPDATE MODAL -->
-  <!-- ================================================= -->
-
-  @if (showUserForm) {
-
-    <div
-      class="modal-overlay"
-      (click)="cancelUserForm()">
-
-      <div
-        class="user-modal"
-        (click)="$event.stopPropagation()">
-
-
-        <!-- ================= MODAL HEADER ================= -->
-
-        <div class="modal-header">
-
-          <div>
-
-            <h2>
-              {{
-                editingUserId === null
-                  ? 'Create User'
-                  : 'Edit User'
-              }}
-            </h2>
-
-            <p>
-              {{
-                editingUserId === null
-                  ? 'Create a new user account.'
-                  : 'Update user information.'
-              }}
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            class="close-button"
-            (click)="cancelUserForm()"
-            [disabled]="savingUser">
-
-            ×
-
-          </button>
-
-        </div>
-
-
-        <!-- ================= FORM ================= -->
-
-        <form
-          [formGroup]="userForm"
-          (ngSubmit)="saveUser()"
-          class="user-form">
-
-
-          <!-- FORM ERROR -->
-
-          @if (formError()) {
-
-            <div class="form-error">
-              {{ formError() }}
+  @if (filteredUsers().length > 0) {
+  <div class="user-table-container">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Contact</th>
+          <th>Access</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of filteredUsers(); track user.id) {
+        <tr>
+          <td>
+            <div class="user-info">
+              <div class="user-avatar"> {{ user.name.charAt(0).toUpperCase() }} </div>
+              <div class="user-details">
+                <div class="user-name-row">
+                  <strong class="user-name">
+                    {{ user.name }}
+                  </strong>
+                  @if (isCurrentUser(user)) { <span class="self-label"> You </span> }
+                </div>
+              </div>
             </div>
-
-          }
-
-
-          <!-- NAME -->
-
-          <div class="form-group">
-
-            <label for="name">
-              Name
-              <span>*</span>
-            </label>
-
-            <input
-              id="name"
-              type="text"
-              formControlName="name"
-              placeholder="Enter name"
-              maxlength="100"
-            />
-
-            @if (isFieldInvalid('name')) {
-
-              <small class="field-error">
-
-                @if (userForm.get('name')?.errors?.['required']) {
-                  Name is required.
-                }
-
-                @else if (userForm.get('name')?.errors?.['maxlength']) {
-                  Name cannot exceed 100 characters.
-                }
-
-              </small>
-
-            }
-
-          </div>
-
-
-          <!-- EMAIL -->
-
-          <div class="form-group">
-
-            <label for="email">
-              Email
-              <span>*</span>
-            </label>
-
-            <input
-              id="email"
-              type="email"
-              formControlName="email"
-              placeholder="Enter email"
-            />
-
-            @if (editingUserId !== null) {
-
-              <small class="field-hint">
-                Email cannot be changed.
-              </small>
-
-            }
-
-            @if (isFieldInvalid('email')) {
-
-              <small class="field-error">
-
-                @if (userForm.get('email')?.errors?.['required']) {
-                  Email is required.
-                }
-
-                @else if (userForm.get('email')?.errors?.['email']) {
-                  Enter a valid email address.
-                }
-
-              </small>
-
-            }
-
-          </div>
-
-
-          <!-- CONTACT -->
-
-          <div class="form-group">
-
-            <label for="contact">
-              Contact
-            </label>
-
-            <input
-              id="contact"
-              type="text"
-              formControlName="contact"
-              placeholder="Enter contact"
-              maxlength="50"
-            />
-
-          </div>
-
-
-          <!-- PASSWORD -->
-
-          <div class="form-group">
-
-            <label for="password">
-
-              Password
-
-              @if (editingUserId === null) {
-                <span>*</span>
+          </td>
+          <td>
+            <span class="user-email-table"> {{ user.email }} </span>
+          </td>
+          <td>
+            @if (user.contact) { <span class="user-contact"> {{ user.contact }} </span> }
+            @else { <span class="no-value"> — </span> }
+          </td>
+          <td>
+            <div class="access-list">
+              @if (user.isMasterAdmin) {
+              <span class="access-badge master"> <span class="badge-dot"></span> Master Admin </span> }
+              @else {
+              @if (user.canReadUsers) {
+              <span class="access-badge read"> <span class="badge-dot"></span> Read </span> }
+              @if (user.canWriteUsers) {
+              <span class="access-badge write"> <span class="badge-dot"></span> Write </span> }
+              @if ( !user.canReadUsers && !user.canWriteUsers ) {
+              <span class="access-badge normal"> <span class="badge-dot"></span> Normal User </span> }
               }
-
-            </label>
-
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              [placeholder]="
-                editingUserId === null
+            </div>
+          </td>
+          <td>
+            <div class="actions">
+              @if (canEditUser(user)) {
+              <button type="button" class="action-button edit" (click)="editUser(user)"> Edit </button>
+              }
+              @if (canDeleteUser(user)) {
+              <button type="button" class="action-button delete" (click)="deleteUser(user)"
+                [disabled]="deletingUserId === user.id">
+                @if (deletingUserId === user.id) { Deleting... }
+                @else { Delete }
+              </button>
+              }
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div> }
+  @else {
+  <div class="empty-state">
+    <div class="empty-icon"> 👤 </div>
+    <h2>No Users Found</h2>
+    <p>No users match your search.</p>
+    @if (canCreateUser()) {
+    <button type="button" class="create-button" (click)="createUser()"> + Create User </button>
+    }
+  </div>
+  }
+  }
+  @if (showUserForm) {
+  <div class="modal-overlay" (click)="cancelUserForm()">
+    <div class="user-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>
+            {{ editingUserId === null ? 'Create User' : 'Edit User' }}
+          </h2>
+          <p> {{ editingUserId === null ? 'Create a new user account.' : 'Update user information.' }}
+          </p>
+        </div>
+        <button type="button" class="close-button" (click)="cancelUserForm()" [disabled]="savingUser"> ×
+        </button>
+      </div>
+      <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="user-form">
+        @if (formError()) { <div class="form-error"> {{ formError() }} </div> }
+        <div class="form-group">
+          <label for="name"> Name <span>*</span> </label>
+          <input id="name" type="text" formControlName="name" placeholder="Enter name" maxlength="100" />
+          @if (isFieldInvalid('name')) {
+          <small class="field-error">
+            @if (userForm.get('name')?.errors?.['required']) { Name is required. }
+            @else if (userForm.get('name')?.errors?.['maxlength']) { Name cannot exceed 100 characters. }
+          </small> }
+        </div>
+        <div class="form-group">
+          <label for="email"> Email <span>*</span> </label>
+          <input id="email" type="email" formControlName="email" placeholder="Enter email" />
+          @if (editingUserId !== null) { <small class="field-hint"> Email cannot be changed. </small> }
+          @if (isFieldInvalid('email')) {
+          <small class="field-error">
+            @if (userForm.get('email')?.errors?.['required']) { Email is required. }
+            @else if (userForm.get('email')?.errors?.['email']) { Enter a valid email address. }
+          </small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="contact"> Contact </label>
+          <input id="contact" type="text" formControlName="contact" placeholder="Enter contact" maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label for="password"> Password
+            @if (editingUserId === null) { <span>*</span> }
+          </label>
+          <input id="password" type="password" formControlName="password" [placeholder]="                editingUserId === null
                   ? 'Enter password'
                   : 'Leave empty to keep current password'
-              "
-            />
-
-            @if (editingUserId !== null) {
-
-              <small class="password-hint">
-                Leave empty to keep the current password.
-              </small>
-
-            }
-
-          </div>
-
-
-          <!-- ================= PERMISSIONS ================= -->
-
-          @if (
-            editingUserId === null ||
-            canEditUserPermissions(
-              users().find(u => u.id === editingUserId)!
-            )
-          ) {
-
-            <div class="permissions-section">
-
-              <div class="permissions-header">
-
-                <div>
-                  <h3>User Permissions</h3>
-
-                  <p>
-                    Control what this user can access.
-                  </p>
-                </div>
-
-              </div>
-
-
-              <div class="permission-options">
-
-                <!-- READ -->
-
-                <label class="permission-option">
-
-                  <input
-                    type="checkbox"
-                    formControlName="canReadUsers"
-                  />
-
-                  <span class="permission-content">
-
-                    <span class="permission-label">
-                      Can Read Users
-                    </span>
-
-                    <span class="permission-description">
-                      Allow the user to view users.
-                    </span>
-
-                  </span>
-
-                </label>
-
-
-                <!-- WRITE -->
-
-                <label class="permission-option">
-
-                  <input
-                    type="checkbox"
-                    formControlName="canWriteUsers"
-                  />
-
-                  <span class="permission-content">
-
-                    <span class="permission-label">
-                      Can Write Users
-                    </span>
-
-                    <span class="permission-description">
-                      Allow the user to create and update users.
-                    </span>
-
-                  </span>
-
-                </label>
-
-              </div>
-
-            </div>
-
+              " />
+          @if (editingUserId !== null) {
+          <small class="password-hint"> Leave empty to keep the current password. </small>
           }
-
-
-          <!-- ================= FORM ACTIONS ================= -->
-
-          <div class="form-actions">
-
-            <button
-              type="button"
-              class="cancel-button"
-              (click)="cancelUserForm()"
-              [disabled]="savingUser">
-
-              Cancel
-
-            </button>
-
-            <button
-              type="submit"
-              class="save-button"
-              [disabled]="savingUser">
-
-              @if (savingUser) {
-                Saving...
-              }
-              @else {
-                {{
-                  editingUserId === null
-                    ? 'Create User'
-                    : 'Update User'
-                }}
-              }
-
-            </button>
-
+        </div>
+        @if ( editingUserId === null || canEditUserPermissions( users().find(u => u.id === editingUserId)! ) ) {
+        <div class="permissions-section">
+          <div class="permissions-header">
+            <div>
+              <h3>User Permissions</h3>
+              <p> Control what this user can access. </p>
+            </div>
           </div>
-
-        </form>
-
-      </div>
-
+          <div class="permission-options">
+            <label class="permission-option">
+              <input type="checkbox" formControlName="canReadUsers" />
+              <span class="permission-content">
+                <span class="permission-label"> Can Read Users </span>
+                <span class="permission-description"> Allow the user to view users. </span>
+              </span>
+            </label>
+            <label class="permission-option">
+              <input type="checkbox" formControlName="canWriteUsers" />
+              <span class="permission-content">
+                <span class="permission-label"> Can Write Users </span>
+                <span class="permission-description"> Allow the user to create and update users. </span>
+              </span>
+            </label>
+          </div>
+        </div> }
+        <div class="form-actions">
+          <button type="button" class="cancel-button" (click)="cancelUserForm()" [disabled]="savingUser">
+            Cancel
+          </button>
+          <button type="submit" class="save-button" [disabled]="savingUser">
+            @if (savingUser) { Saving... }
+            @else { {{ editingUserId === null ? 'Create User' : 'Update User' }} }
+          </button>
+        </div>
+      </form>
     </div>
-
-  }
-
+  </div> }
 </div>
