@@ -4,7 +4,10 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { CreateUserRequest, UpdateUserRequest, UserResponse } from '../../interfaces/interfaces';
 import { API, authHeaders, getErrorMessage } from '../../helpers/api';
-import { canDeleteUser, canEditUser, canEditUserPermissions, canManageTasks } from '../../helpers/permissions';
+import {
+  canDeleteUser, canEditUser, canEditUserPermissions
+  , canManageTasks
+} from '../../helpers/permissions';
 import { Auth } from '../../services/auth';
 
 @Component({
@@ -25,7 +28,6 @@ export class Users implements OnInit {
   deletingUserId: number | null = null;
   showUserForm = false;
   editingUserId: number | null = null;
-  searchText = signal('');
   errorMessage = signal('');
   formError = signal('');
 
@@ -46,7 +48,7 @@ export class Users implements OnInit {
     this.http.get<UserResponse[]>(API.users, { headers: authHeaders(this.auth.getToken()) }).subscribe({
       next: users => {
         this.users.set(users);
-        this.applySearch();
+        this.filteredUsers.set(users);
         this.loading.set(false);
       },
       error: error => {
@@ -57,22 +59,21 @@ export class Users implements OnInit {
     });
   }
 
-  onSearchChange(value: string): void {
-    this.searchText.set(value);
-    this.applySearch();
-  }
-
-  private applySearch(): void {
-    const search = this.searchText().trim().toLowerCase();
+  onSearchChange(value: Event): void {
+    const search = (value.target as HTMLInputElement).value.trim().toLowerCase();
     this.filteredUsers.set(!search ? this.users() : this.users().filter(user =>
       [user.name, user.email, user.contact].some(value => (value ?? '').toLowerCase().includes(search)),
     ));
   }
-
   isCurrentUser = (user: UserResponse): boolean => user.id === this.auth.getCurrentUser()?.userId;
+
   canEditUser = (user: UserResponse): boolean => canEditUser(this.auth.getCurrentUser(), user);
+
   canEditUserPermissions = (user: UserResponse): boolean => canEditUserPermissions(this.auth.getCurrentUser(), user);
-  canDeleteUser = (user: UserResponse): boolean => canDeleteUser(this.auth.getCurrentUser(), user);
+
+  canDeleteUser = (user: UserResponse): boolean => canDeleteUser(this.auth.getCurrentUser(),
+    user);
+
   canCreateUser = (): boolean => canManageTasks(this.auth.getCurrentUser());
 
   createUser(): void {
@@ -101,7 +102,7 @@ export class Users implements OnInit {
   private updatePermissionControls(): void {
     const target = this.users().find(user => user.id === this.editingUserId);
     const controls = [this.userForm.get('canReadUsers'), this.userForm.get('canWriteUsers')];
-    const editable = !!target && this.canEditUserPermissions(target);
+    const editable = this.editingUserId === null || (!!target && this.canEditUserPermissions(target));
     controls.forEach(control => editable ? control?.enable() : control?.disable());
   }
 
@@ -119,7 +120,6 @@ export class Users implements OnInit {
     if (this.userForm.invalid) return void this.userForm.markAllAsTouched();
     const currentUser = this.auth.getCurrentUser();
     if (!currentUser) return;
-
     this.savingUser = true;
     const value = this.userForm.getRawValue();
     const update = this.editingUserId !== null;
@@ -137,8 +137,7 @@ export class Users implements OnInit {
       canReadUsers: value.canReadUsers ?? false, canWriteUsers: value.canWriteUsers ?? false,
     });
 
-    const request = update
-      ? this.http.put<UserResponse>(`${API.users}/${this.editingUserId}`, payload, { headers: authHeaders(this.auth.getToken()) })
+    const request = update ? this.http.put<UserResponse>(`${API.users}/${this.editingUserId}`, payload, { headers: authHeaders(this.auth.getToken()) })
       : this.http.post<UserResponse>(API.users, payload, { headers: authHeaders(this.auth.getToken()) });
 
     request.subscribe({

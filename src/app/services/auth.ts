@@ -37,12 +37,7 @@ export class Auth {
 
   canWriteUsers(): boolean { return this.currentUser()?.canWriteUsers === true; }
 
-  canViewUsers(): boolean {
-    const user = this.currentUser();
-    return user?.isMasterAdmin === true || user?.canReadUsers === true || user?.canWriteUsers === true;
-  }
-
-  private loadUser(): CurrentUser | null {
+   private loadUser(): CurrentUser | null {
     const storedUser = localStorage.getItem('current_user');
     if (!storedUser) { return null; }
     try { return JSON.parse(storedUser) as CurrentUser; }

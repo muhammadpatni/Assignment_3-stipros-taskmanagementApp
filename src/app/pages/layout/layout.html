@@ -26,12 +26,12 @@
         <span class="menu-icon"> ✓ </span>
         <span> My Tasks </span>
       </a>
-      @if (auth.canViewUsers()) {
+      @if (auth.isMasterAdmin() || auth.canWriteUsers()||auth.canReadUsers()) {
       <a routerLink="alltask" routerLinkActive="active" class="menu-item" (click)="closeSidebarOnMobile()">
         <span class="menu-icon"> ☷ </span>
         <span> All Tasks </span>
       </a> }
-      @if (auth.canViewUsers()) {
+      @if (auth.isMasterAdmin() || auth.canWriteUsers()||auth.canReadUsers()) {
       <a routerLink="/users" routerLinkActive="active" class="menu-item" (click)="closeSidebarOnMobile()">
         <span class="menu-icon"> ♙ </span>
         <span> Users </span>

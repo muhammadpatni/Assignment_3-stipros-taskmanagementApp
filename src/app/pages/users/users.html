@@ -10,8 +10,8 @@
   <div class="toolbar">
     <div class="search-box">
       <span class="search-icon">🔍</span>
-      <input type="text" placeholder="Search users..." [ngModel]="searchText()"
-        (ngModelChange)="onSearchChange($event)" />
+      <input type="text" placeholder="Search users..." 
+        (input)="onSearchChange($event)" />
     </div>
     <button type="button" class="refresh-button" (click)="loadUsers()" [disabled]="loading()">
       ↻ Refresh
@@ -39,7 +39,7 @@
       </thead>
       <tbody>
         @for (user of filteredUsers(); track user.id) {
-        <tr>
+        <tr (click)="editUser(user)">
           <td>
             <div class="user-info">
               <div class="user-avatar"> {{ user.name.charAt(0).toUpperCase() }} </div>
@@ -77,10 +77,11 @@
           <td>
             <div class="actions">
               @if (canEditUser(user)) {
-              <button type="button" class="action-button edit" (click)="editUser(user)"> Edit </button>
+              <button type="button" class="action-button edit" (click)="$event.stopPropagation(); editUser(user)"> Edit
+              </button>
               }
               @if (canDeleteUser(user)) {
-              <button type="button" class="action-button delete" (click)="deleteUser(user)"
+              <button type="button" class="action-button delete" (click)="$event.stopPropagation(); deleteUser(user)"
                 [disabled]="deletingUserId === user.id">
                 @if (deletingUserId === user.id) { Deleting... }
                 @else { Delete }

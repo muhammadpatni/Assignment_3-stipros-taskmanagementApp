@@ -4,11 +4,10 @@ import { HttpClient } from '@angular/common/http';
 import { Auth } from '../../services/auth';
 import { TaskResponse } from '../../interfaces/interfaces';
 import { API, authHeaders } from '../../helpers/api';
-import { taskStatusClass, taskStatusText } from '../../helpers/task';
+import { getAssignedToName, taskStatusClass, taskStatusText } from '../../helpers/task';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
@@ -18,11 +17,13 @@ export class Dashboard implements OnInit {
   public auth = inject(Auth);
   private http = inject(HttpClient);
   tasks = signal<TaskResponse[]>([]);
-
   pendingTasks = signal<number>(0);
   processTasks = signal<number>(0);
   completedTasks = signal<number>(0);
   totalUsers = signal<number>(0);
+  getStatusText = taskStatusText;
+  getStatusClass = taskStatusClass;
+  getAssignedToName = getAssignedToName;
 
   ngOnInit(): void { this.loadDashboardData(); }
 
@@ -37,20 +38,11 @@ export class Dashboard implements OnInit {
       },
       error: (error) => { console.error('Failed to load dashboard tasks:', error); }
     });
-    if (this.auth.canViewUsers()) {
-      this.http.get<unknown[]>(API.users, { headers }).subscribe({
-        next: (response) => { this.totalUsers .set(response.length); },
+    if (this.auth.isMasterAdmin() || this.auth.canWriteUsers()||this.auth.canReadUsers()) {
+      this.http.get<any[]>(API.users, { headers }).subscribe({
+        next: (response) => { this.totalUsers.set(response.length); },
         error: (error) => { console.error('Failed to load users:', error); }
       });
     }
-  }
-
-  getStatusText = taskStatusText;
-  getStatusClass = taskStatusClass;
-
-  getAssignedToName(task: TaskResponse): string {
-    const currentUser = this.auth.getCurrentUser();
-    if (currentUser && task.assignedToId === currentUser.userId) { return 'Myself'; }
-    return task.assignedToName || 'Unassigned';
   }
 }

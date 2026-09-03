@@ -13,17 +13,24 @@
         <div class="permission-icon">ⓘ</div>
         <div>
             <strong>Task permissions</strong>
-            @if (auth.isMasterAdmin()) { <p> You have full access. You can edit, assign, update status and delete tasks.
-            </p> }
-            @else if (auth.canWriteUsers()) {
-            <p> You can edit title, description, deadline, assignment, status and delete tasks. </p> }
-            @else if (auth.canReadUsers()) {
-            <p> You have view-only access. You can view all tasks but cannot edit or delete them. </p> }
+            @if (auth.isMasterAdmin()) {
+            <p>
+                You have full access. You can edit, assign, archive, unarchive, update status and delete
+                tasks.
+            </p>
+            } @else if (auth.canWriteUsers()) {
+            <p>You can edit, assign, archive, unarchive, update status and delete tasks.</p>
+            } @else if (auth.canReadUsers()) {
+            <p>
+                You can manage tasks that you created or that are assigned to you. Other tasks are
+                view-only.
+            </p>
+            }
         </div>
     </div>
     <div class="toolbar">
         <div class="search-box">
-            <span>🔍</span>
+            <span class="search-icon">🔍</span>
             <input type="text" placeholder="Search tasks, users..." [ngModel]="searchText()"
                 (ngModelChange)="onSearchChange($event)" />
         </div>
@@ -36,8 +43,26 @@
         <button type="button" class="refresh-button" (click)="loadTasks()" [disabled]="loading()">
             ↻ Refresh
         </button>
+        @if (canManageTasks()) {
+        <button type="button" class="new-task-button" (click)="openCreateTask(null)">
+            + New Task
+        </button>
+        }
     </div>
-    @if (errorMessage()) { <div class="error-message"> {{ errorMessage() }} </div> }
+    <div class="task-tabs">
+        <button type="button" class="task-tab" [class.active]="activeTab() === 'all'" (click)="setActiveTab('all')">
+            <span>All Tasks</span>
+            <span class="tab-count"> {{ getActiveTaskCount() }} </span>
+        </button>
+        <button type="button" class="task-tab archived-tab" [class.active]="activeTab() === 'archived'"
+            (click)="setActiveTab('archived')">
+            <span>Archived</span>
+            <span class="tab-count"> {{ getArchivedTaskCount() }} </span>
+        </button>
+    </div>
+    @if (errorMessage()) {
+    <div class="error-message">{{ errorMessage() }}</div>
+    }
     @if (loading()) {
     <div class="loading-state">
         <div class="spinner"></div>
@@ -59,128 +84,417 @@
                 </tr>
             </thead>
             <tbody>
-                @for ( task of filteredTasks(); track task.id) {
-                <tr>
-                    <td>
-                        <div class="task-info">
-                            <strong> {{ task.title }} </strong>
-                            @if (task.description) { <span> {{ task.description }} </span> }
-                        </div>
-                    </td>
-                    <td>
-                        <div class="person-info">
-                            <span class="person-avatar"> {{ task.createdByName.charAt(0).toUpperCase() }}
-                            </span>
-                            <span> {{ task.createdByName }} </span>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="person-info">
-                            <span class="person-avatar">
-                                {{ task.assignedToName.charAt(0).toUpperCase() }}
-                            </span>
-                            <span> {{ task.assignedToName || 'Unassigned' }} </span>
-                        </div>
-                    </td>
-                    <td>
-                        @if (task.dueDate) { <span class="deadline"> {{ task.dueDate | date:'dd MMM yyy' }}
-                        </span> }
-                        @else { <span class="no-value"> No deadline </span> }
-                    </td>
-                    <td>
-                        @if (canChangeStatus(task)) {
-                        <select class="status-select" [value]="task.status" [disabled]="updatingStatusId === task.id"
-                            (change)="changeStatus(task, $event)">
-                            <option value="1">Pending</option>
-                            <option value="2">In Process</option>
-                            <option value="3">Completed</option>
-                        </select> }
-                        @else {
-                        <span class="status-badge" [class]="getStatusClass(task.status)">
-                            {{ getStatusText(task.status) }}
-                        </span>
-                        }
-                    </td>
-                    <td>
-                        <div class="actions">
-                            @if (canEditTask(task)) {
-                            <button type="button" class="action-button edit" (click)="editTask(task)">
-                                Edit
-                            </button> }
-                            @if (canDeleteTask(task)) {
-                            <button type="button" class="action-button delete" [disabled]="deletingTaskId === task.id"
-                                (click)="deleteTask(task)">
-                                @if (deletingTaskId === task.id) { Deleting... }
-                                @else { Delete }
-                            </button>
+                <ng-template #taskRow let-task="task" let-depth="depth">
+                    <tr class="task-row" [class.archived-row]="task.isArchived" (click)="editTask(task)">
+                        <td>
+                            <div class="task-info" [style.paddingLeft.px]="depth * 22">
+                                @if (task.isArchived) {
+                                <span class="archived-chip"> Archived </span>
+                                }
+                                <div class="task-title-row">
+                                    @if (hasChildren(task.id)) {
+                                    <button type="button" class="expand-toggle" [class.expanded]="isExpanded(task.id)"
+                                        (click)="toggleExpand(task.id, $event)" [attr.aria-label]="
+                            isExpanded(task.id) ? 'Collapse sub-tasks' : 'Expand sub-tasks'
+                          ">
+                                        ▶
+                                    </button>
+                                    } @else if (depth > 0) {
+                                    <span class="expand-spacer"></span>
+                                    }
+                                    <strong> {{ task.title }} </strong>
+                                    @if (hasChildren(task.id)) {
+                                    <span class="child-count" title="Sub-tasks">
+                                        {{ getChildren(task.id).length }}
+                                    </span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="person-info">
+                                <span class="person-avatar">
+                                    {{ task.createdByName ? task.createdByName.charAt(0).toUpperCase() : '?' }}
+                                </span>
+                                <span class="person-name"> {{ task.createdByName }} </span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (task.assignedToNames && task.assignedToNames.length > 0) {
+                            <div class="assigned-users">
+                                <div class="avatar-stack">
+                                    @for (name of task.assignedToNames.slice(0, 3); track $index) {
+                                    <span class="person-avatar stack-avatar" [style.z-index]="3 - $index">
+                                        {{ name ? name.charAt(0).toUpperCase() : '?' }}
+                                    </span>
+                                    }
+                                    @if (task.assignedToNames.length > 3) {
+                                    <span class="avatar-more"> +{{ task.assignedToNames.length - 3 }} </span>
+                                    }
+                                </div>
+                                <span class="assigned-names"> {{ getAssignedNames(task) }} </span>
+                            </div>
+                            } @else {
+                            <span class="no-value"> Unassigned </span>
                             }
-                            @if ( !canEditTask(task) && !canDeleteTask(task) ) { <span class="view-only"> View Only
-                            </span> }
-                        </div>
-                    </td>
-                </tr> }
+                        </td>
+                        <td>
+                            @if (task.dueDate) {
+                            <div class="deadline-wrapper">
+                                <span class="deadline" [class.overdue]="
+                          !task.isArchived &&
+                          task.dueDate &&
+                          (task.dueDate | date: 'yyyy-MM-dd')! < todayDate &&
+                          task.status !== 3
+                        ">
+                                    {{ task.dueDate | date: 'dd MMM yyyy' }}
+                                </span>
+                                @if (
+                                !task.isArchived &&
+                                task.dueDate &&
+                                (task.dueDate | date: 'yyyy-MM-dd')! < todayDate && task.status !==3 ) { <span
+                                    class="overdue-chip"> Overdue </span>
+                                    }
+                            </div>
+                            } @else {
+                            <span class="no-value"> No deadline </span>
+                            }
+                        </td>
+                        <td>
+                            @if (!task.isArchived && canChangeStatus(task)) {
+                            <select class="status-select" [value]="task.status"
+                                [disabled]="updatingStatusId === task.id" (change)="changeStatus(task, $event)"
+                                (click)="$event.stopPropagation()">
+                                <option value="1">Pending</option>
+                                <option value="2">In rocess</option>
+                                <option value="3">Completed</option>
+                            </select>
+                            } @else {
+                            <span class="status-badge" [class]="getStatusClass(task.status)">
+                                {{ getStatusText(task.status) }}
+                            </span>
+                            }
+                        </td>
+                        <td>
+                            <div class="actions" (click)="$event.stopPropagation()">
+                                @if (!task.isArchived) {
+                                @if (canEditTask(task)) {
+                                <button type="button" class="action-button edit" (click)="editTask(task)">
+                                    Edit
+                                </button>
+                                <button type="button" class="action-button archive"
+                                    [disabled]="archivingTaskId === task.id" (click)="archiveTask(task)">
+                                    @if (archivingTaskId === task.id) {
+                                    Archiving...
+                                    } @else {
+                                    Archive
+                                    }
+                                </button>
+                                } @else {
+                                <button type="button" class="action-button view" (click)="editTask(task)">
+                                    View
+                                </button>
+                                @if (isOwnTask(task)) {
+                                <button type="button" class="action-button archive"
+                                    [disabled]="archivingTaskId === task.id" (click)="archiveTask(task)">
+                                    @if (archivingTaskId === task.id) {
+                                    Archiving...
+                                    } @else {
+                                    Archive
+                                    }
+                                </button>
+                                }
+                                }
+                                @if (auth.isMasterAdmin() || auth.canWriteUsers() || isOwnTask(task)) {
+                                <button type="button" class="action-button subtask" (click)="addSubTask(task)">
+                                    + Sub-task
+                                </button>
+                                }
+                                } @else {
+                                @if (auth.isMasterAdmin() || auth.canWriteUsers() || isOwnTask(task)) {
+                                <button type="button" class="action-button archive"
+                                    [disabled]="archivingTaskId === task.id" (click)="archiveTask(task)">
+                                    @if (archivingTaskId === task.id) {
+                                    Unarchiving...
+                                    } @else {
+                                    Unarchive
+                                    }
+                                </button>
+                                } @else {
+                                <button type="button" class="action-button view" (click)="editTask(task)">
+                                    View
+                                </button>
+                                }
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    @if (isExpanded(task.id)) {
+                    @for (child of getChildren(task.id); track child.id) {
+                    <ng-container
+                        *ngTemplateOutlet="taskRow; context: { task: child, depth: depth + 1 }"></ng-container>
+                    }
+                    }
+                </ng-template>
+                @for (task of rootTasks(); track task.id) {
+                <ng-container *ngTemplateOutlet="taskRow; context: { task: task, depth: 0 }"></ng-container>
+                }
             </tbody>
         </table>
-    </div> }
-    @else {
+    </div>
+    } @else {
     <div class="empty-state">
-        <div class="empty-icon">✓</div>
-        <h2>No Tasks Found</h2>
-        <p> No tasks match your current search or filter. </p>
-    </div> }
+        <div class="empty-icon">
+            @if (activeTab() === 'archived') {
+            📦
+            } @else {
+            ✓
+            }
+        </div>
+        <h2>
+            @if (activeTab() === 'archived') {
+            No Archived Tasks
+            } @else {
+            No Tasks Found
+            }
+        </h2>
+        <p>
+            @if (activeTab() === 'archived') {
+            There are no archived tasks.
+            } @else {
+            No tasks match your current search or filter.
+            }
+        </p>
+    </div>
     }
+    }
+
     @if (showEditForm) {
     <div class="modal-overlay" (click)="closeEditForm()">
-        <div class="task-modal" (click)="$event.stopPropagation()">
+        <div class="task-modal" (click)="onModalContentClick($event)">
+            @if (formMode === 'create') {
             <div class="modal-header">
                 <div>
-                    <h2>Edit Task</h2>
-                    <p> Update task information and assignment. </p>
+                    <h2>
+                        @if (parentTaskForCreate) {
+                        Create Sub-task
+                        } @else {
+                        Create Task
+                        }
+                    </h2>
+                    <p>
+                        @if (parentTaskForCreate) {
+                        This will be nested under "{{ parentTaskForCreate.title }}".
+                        } @else {
+                        Fill in the details for the new task.
+                        }
+                    </p>
                 </div>
                 <button type="button" class="close-button" (click)="closeEditForm()" [disabled]="saving()">
                     ×
                 </button>
             </div>
             <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
-                @if (formError()) { <div class="form-error"> {{ formError() }} </div> }
+                @if (formError()) {
+                <div class="form-error">{{ formError() }}</div>
+                }
                 <div class="editable-section">
-                    <div class="section-title"> Task Details </div>
-                    <div class="section-description"> You have permission to modify these task fields. </div>
+                    <div class="section-title">Task Details</div>
+                    <div class="section-description">
+                        @if (parentTaskForCreate) {
+                        Parent task:
+                        <strong>{{ parentTaskForCreate.title }}</strong>
+                        } @else {
+                        This will be created as a top-level ask.
+                        }
+                    </div>
                     <div class="form-group">
                         <label> Title <span>*</span> </label>
                         <input type="text" formControlName="title" maxlength="200" placeholder="Enter task title" />
-                        @if (isFieldInvalid('title')) { <small class="field-error"> Title is required. </small> }
+                        @if (isFieldInvalid('title')) {
+                        <small class="field-error"> Title is required. </small>
+                        }
                     </div>
                     <div class="form-group">
-                        <label>Description</label>
-                        <textarea formControlName="description" rows="4" maxlength="5000"
+                        <label> Description </label>
+                        <textarea formControlName="description" rows="5" maxlength="5000"
                             placeholder="Enter task description"></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Deadline</label>
-                        <input type="date" formControlName="dueDate" [min]=" todayDate" />
+                        <label> Deadline </label>
+                        <input type="date" formControlName="dueDate" [min]="todayDate" />
                     </div>
                     <div class="form-group">
-                        <label>Assigned To</label>
-                        <select formControlName="assignedToId">
-                            <option [ngValue]="null"> Unassigned </option>
-                            @for ( user of assignableUsers(); track user.id ) {
-                            <option [ngValue]="user.id"> {{ user.name }} — {{ user.email }} </option> }
-                        </select>
+                        <label> Assigned To </label>
+                        @if (getSelectedAssignees().length > 0) {
+                        <div class="selected-assignees">
+                            @for (user of getSelectedAssignees(); track user.id) {
+                            <div class="assignee-chip">
+                                <span class="assignee-avatar">
+                                    {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
+                                </span>
+                                <span class="assignee-name"> {{ user.name }} </span>
+                                <button type="button" class="remove-assignee" (click)="removeAssignee(user.id)"> ×
+                                </button>
+                            </div> }
+                        </div> }
+                        <div class="assignee-dropdown">
+                            <input type="text" class="assignee-search" placeholder="Search users..."
+                                [ngModel]="assigneeSearch()" [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="onAssigneeSearchChange($event)" (focus)="openAssigneeDropdown()" />
+                            @if (assigneeDropdownOpen) {
+                            <div class="assignee-options">
+                                @if (filteredAssignableUsers.length > 0) {
+                                @for (user of filteredAssignableUsers; track user.id) {
+                                <button type="button" class="assignee-option"
+                                    [class.selected]="taskForm.get('assignedToIds')?.value?.includes(user.id)"
+                                    (click)="selectAssignee(user)">
+                                    <span class="option-avatar">
+                                        {{ user.name ? user.name.charAt(0).toUpperCase() : '? }}
+                                    </span>
+                                    <span class="option-details">
+                                        <strong> {{ user.name }} </strong>
+                                        <small> {{ user.email }} </small>
+                                    </span>
+                                    @if (taskForm.get('assignedToIds')?.value?.includes(user.id)) {
+                                    <span class="option-check"> ✓ </span> }
+                                </button> } } @else {
+                                <div class="no-assignee-results">No users found.</div> }
+                            </div> }
+                        </div>
+                        @if (getSelectedAssignees().length > 0) {
+                        <button type="button" class="clear-assignees" (click)="clearAssignee()">
+                            Clear all
+                        </button> }
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" (click)="closeEditForm()" [disabled]="saving()"> Cancel
+                    </button>
+                    <button type="submit" class="save-button" [disabled]="saving()">
+                        @if (saving()) { Creating... }
+                        @else { Create Task }
+                    </button>
+                </div>
+            </form> }
+            @else if (getCurrentTask(); as currentTask) {
+            <div class="modal-header">
+                <div>
+                    <h2>
+                        @if (!currentTask.isArchived && canEditTask(currentTask)) { Edit Task } @else { Task Preview }
+                    </h2>
+                    <p>
+                        @if (!currentTask.isArchived && canEditTask(currentTask)) {
+                        Update task information and assignment.
+                        } @else { View task information. This task is read-only. }
+                    </p>
+                </div>
+                <button type="button" class="close-button" (click)="closeEditForm()" [disabled]="saving()"> × </button>
+            </div>
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab" [class.active]="activeModalTab === 'details'"
+                    (click)="setModalTab('details')">
+                    Task Details
+                </button>
+                <button type="button" class="modal-tab" [class.active]="activeModalTab === 'logs'"
+                    (click)="setModalTab('logs')">
+                    Audit Logs
+                    @if (auditLogs().length > 0) {
+                    <span class="log-count"> {{ auditLogs().length }} </span> }
+                </button>
+            </div>
+            @if (activeModalTab === 'details') {
+            @if (!currentTask.isArchived && canEditTask(currentTask)) {
+            <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
+                @if (formError()) { <div class="form-error"> {{ formError() }} </div> }
+                <div class="editable-section">
+                    <div class="section-title">Task Details</div>
+                    <div class="section-description">
+                        You have permission to modify these task fields.
+                    </div>
+                    <div class="form-group">
+                        <label> Title <span>*</span> </label>
+                        <input type="text" formControlName="title" maxlength="200" placeholder="Enter task title" />
+                        @if (isFieldInvalid('title')) {
+                        <small class="field-error"> Title is required. </small>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label> Description </label>
+                        <textarea formControlName="description" rows="5" maxlength="5000"
+                            placeholder="Enter task description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label> Deadline </label>
+                        <input type="date" formControlName="dueDate" [min]="todayDate" />
+                    </div>
+                    <div class="form-group">
+                        <label> Assigned To </label>
+                        @if (getSelectedAssignees().length > 0) {
+                        <div class="selected-assignees">
+                            @for (user of getSelectedAssignees(); track user.id) {
+                            <div class="assignee-chip">
+                                <span class="assignee-avatar">
+                                    {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
+                                </span>
+                                <span class="assignee-name"> {{ user.name }} </span>
+                                <button type="button" class="remove-assignee" (click)="removeAssignee(user.id)">
+                                    ×
+                                </button>
+                            </div> }
+                        </div> }
+                        <div class="assignee-dropdown">
+                            <input type="text" class="assignee-search" placeholder="Search users..."
+                                [ngModel]="assigneeSearch()" [ngModelOptions]="{ standalone: true }"
+                                (ngModelChange)="onAssigneeSearchChange($event)" (focus)="openAssigneeDropdown()" />
+                            @if (assigneeDropdownOpen) {
+                            <div class="assignee-options">
+                                @if (filteredAssignableUsers.length > 0) {
+                                @for (user of filteredAssignableUsers; track user.id) {
+                                <button type="button" class="assignee-option" [class.selected]="
+                                  taskForm.get('assignedToIds')?.value?.includes(user.id)
+                                " (click)="selectAssignee(user)">
+                                    <span class="option-avatar">
+                                        {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
+                                    </span>
+                                    <span class="option-details">
+                                        <strong> {{ user.name }} </strong>
+                                        <small> {{ user.email }} </small>
+                                    </span>
+                                    @if (taskForm.get('assignedToIds')?.value?.includes(user.id)) { <span
+                                        class="option-check"> ✓ </span> }
+                                </button> } }
+                                @else {
+                                <div class="no-assignee-results">No users found.</div> }
+                            </div> }
+                        </div>
+                        @if (getSelectedAssignees().length > 0) {
+                        <button type="button" class="clear-assignees" (click)="clearAssignee()">
+                            Clear all
+                        </button> }
                     </div>
                 </div>
                 <div class="task-information">
                     <div class="info-item">
-                        <span>Created By</span>
-                        <strong> {{ tasks().find( t => t.id === editingTaskId )?.createdByName }} </strong>
+                        <span> Created By </span>
+                        <strong> {{ currentTask.createdByName }} </strong>
                     </div>
                     <div class="info-item">
-                        <span>Current Status</span>
-                        <strong> {{ getStatusText( tasks().find( t => t.id === editingTaskId)?.status ?? 0 ) }}
-                        </strong>
+                        <span> Current Status </span>
+                        <strong> {{ getStatusText(currentTask.status) }} </strong>
                     </div>
+                    @if (getParentTaskTitle(currentTask); as parentTitle) {
+                    <div class="info-item">
+                        <span> Parent Task </span>
+                        <strong> {{ parentTitle }} </strong>
+                    </div> }
                 </div>
                 <div class="form-actions">
+                    @if (canManageTasks()) {
+                    <button type="button" class="subtask-button" [disabled]="saving()"
+                        (click)="addSubTask(currentTask)">
+                        + Add Sub-task
+                    </button> }
                     <button type="button" class="cancel-button" (click)="closeEditForm()" [disabled]="saving()"> Cancel
                     </button>
                     <button type="submit" class="save-button" [disabled]="saving()">
@@ -188,7 +502,157 @@
                         @else { Update Task }
                     </button>
                 </div>
-            </form>
+            </form> }
+            @else {
+            <div class="task-form preview-form">
+                <div class="view-only-section">
+                    <div class="section-title">Task Details</div>
+                    <div class="section-description">
+                        This task is archived and is available for preview only.
+                    </div>
+                    <div class="view-field">
+                        <span> Title </span>
+                        <strong> {{ currentTask.title }} </strong>
+                    </div>
+                    <div class="view-field">
+                        <span> Description </span>
+                        @if (currentTask.description) {
+                        <strong> {{ currentTask.description }} </strong>
+                        } @else { <strong class="no-value"> No description </strong> }
+                    </div>
+                    <div class="view-field">
+                        <span> Deadline </span>
+                        @if (currentTask.dueDate) {
+                        <strong> {{ currentTask.dueDate | date: 'dd MMM yyyy' }} </strong>
+                        } @else { <strong class="no-value"> No deadline </strong> }
+                    </div>
+                    <div class="view-field">
+                        <span> Assigned To </span>
+                        <strong> {{ getAssignedNames(currentTask) }} </strong>
+                    </div>
+                    <div class="preview-archived-notice">
+                        <span class="archived-chip"> Archived </span>
+                        <span> This task is archived. </span>
+                    </div>
+                </div>
+                <div class="task-information">
+                    <div class="info-item">
+                        <span> Created By </span>
+                        <strong> {{ currentTask.createdByName }} </strong>
+                    </div>
+                    <div class="info-item">
+                        <span> Current Status </span>
+                        <strong> {{ getStatusText(currentTask.status) }} </strong>
+                    </div>
+                    @if (getParentTaskTitle(currentTask); as parentTitle) {
+                    <div class="info-item">
+                        <span> Parent Task </span>
+                        <strong> {{ parentTitle }} </strong>
+                    </div> }
+                </div>
+                <div class="form-actions">
+                    @if (canManageTasks() && !currentTask.isArchived) {
+                    <button type="button" class="subtask-button" (click)="addSubTask(currentTask)"> + Add Sub-task
+                    </button> }
+                    <button type="button" class="cancel-button" (click)="closeEditForm()">
+                        Close
+                    </button>
+                </div>
+            </div> } }
+            @if (activeModalTab === 'logs') {
+            <div class="audit-logs-container">
+                @if (loadingAuditLogs()) {
+                <div class="audit-loading">
+                    <div class="spinner"></div>
+                    <p>Loading audit logs...</p>
+                </div>
+                }
+                @else if (auditLogError()) {
+                <div class="audit-error"> {{ auditLogError() }} </div>
+                } @else if (auditLogs().length === 0) {
+                <div class="audit-empty">
+                    <div class="audit-empty-icon">✓</div>
+                    <h3>No Audit Logs</h3>
+                    <p>No changes have been recorded for this task yet.</p>
+                </div> }
+                @else {
+                <div class="audit-log-list">
+                    @for (log of auditLogs(); track log.id) {
+                    <div class="audit-log-item">
+                        <div class="audit-log-left">
+                            <div class="audit-log-icon"
+                                [class.icon-created]="log.action === 'Created' || log.action === 'Sub-Task Created'"
+                                [class.icon-deleted]="log.action === 'Deleted'"
+                                [class.icon-archived]="log.action === 'Archived'"
+                                [class.icon-unarchived]="log.action === 'Unarchived'">
+                                @if (log.action === 'Created' || log.action === 'Sub-Task Created') { + }
+                                @else if
+                                (log.action === 'Deleted') { × }
+                                @else if (log.action === 'Archived') { A }
+                                @else if (log.action === 'Unarchived') { U }
+                                @else { ↻ }
+                            </div>
+                            <div class="audit-log-line"></div>
+                        </div>
+                        <div class="audit-log-content">
+                            <div class="audit-log-header">
+                                <div>
+                                    <strong> {{ log.action }} </strong>
+                                    @if (log.fieldName) {
+                                    <span class="audit-log-field"> {{ log.fieldName }} </span>
+                                    }
+                                </div>
+                                <span class="audit-date">
+                                    {{ log.createdDate | date: 'dd MMM yyyy, hh:mm a' }}
+                                </span>
+                            </div>
+                            <div class="audit-user">
+                                <span class="audit-user-avatar">
+                                    {{ log.userName ? log.userName.charAt(0).toUpperCase() : '?' }}
+                                </span>
+                                <span> {{ log.userName }} </span>
+                            </div>
+                            @if (log.oldValue || log.newValue) {
+                            <div class="audit-values">
+                                @if (log.oldValue) {
+                                <div class="audit-value old-value">
+                                    <span class="value-label">OLD</span>
+                                    @for (item of parseAuditValues(log.oldValue); track $index) {
+                                    <div class="audit-field">
+                                        @if (item.key) {
+                                        <span class="audit-field-name"> {{ item.key }}: </span>
+                                        }
+                                        <span class="audit-field-value"> {{ item.value }} </span>
+                                    </div> }
+                                </div> }
+                                @if (log.oldValue && log.newValue) {
+                                <div class="audit-arrow">→</div> }
+                                @if (log.newValue) {
+                                <div class="audit-value new-value">
+                                    <span class="value-label">NEW</span>
+                                    @for (item of parseAuditValues(log.newValue); track $index) {
+                                    <div class="audit-field">
+                                        @if (item.key) {
+                                        <span class="audit-field-name"> {{ item.key }}: </span>
+                                        }
+                                        <span class="audit-field-value">
+                                            {{ item.value }}
+                                        </span>
+                                    </div>
+                                    }
+                                </div>
+                                }
+                            </div>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+            }
+            }
         </div>
-    </div> }
+    </div>
+    }
 </div>

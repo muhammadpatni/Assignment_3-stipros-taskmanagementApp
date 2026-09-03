@@ -34,7 +34,7 @@
         <strong>{{ completedTasks() }}</strong>
       </div>
     </div>
-    @if (auth.canViewUsers()) {
+    @if (auth.isMasterAdmin() || auth.canWriteUsers()||auth.canReadUsers()) {
     <div class="stat-card">
       <div class="stat-icon users-icon">♙</div>
       <div class="stat-content">
@@ -54,13 +54,10 @@
     <div class="dashboard-task-list">
       @for (task of tasks(); track task.id) {
       <div class="dashboard-task-item">
-        <div class="dashboard-task-info">
-          <strong>{{ task.title }}</strong>
-          @if (task.description) { <span>{{ task.description }}</span> }
-        </div>
+        <div class="dashboard-task-info"> <strong>{{ task.title }}</strong> </div>
         <div class="dashboard-task-assigned">
           <small>Assigned To</small>
-          <strong>{{ getAssignedToName(task) }}</strong>
+          <strong>{{ getAssignedToName(task, auth.getCurrentUser()) }}</strong>
         </div>
         <div class="dashboard-task-status">
           <span class="status-badge" [class]="getStatusClass(task.status)">
@@ -76,7 +73,7 @@
       <p>You currently don't have any tasks.</p>
     </div> }
   </div>
-  @if (auth.canViewUsers()) {
+  @if (auth.isMasterAdmin() || auth.canWriteUsers()||auth.canReadUsers()) {
   <div class="content-card">
     <div class="card-header">
       <div>

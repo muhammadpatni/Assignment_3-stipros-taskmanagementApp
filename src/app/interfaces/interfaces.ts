@@ -24,6 +24,12 @@ export interface CurrentUser {
   canWriteUsers: boolean;
 }
 
+export interface AssignableUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface TaskResponse {
   id: number;
   title: string;
@@ -31,30 +37,32 @@ export interface TaskResponse {
   createdDate: string;
   dueDate: string | null;
   status: number;
+
   createdById: number;
   createdByName: string;
-  assignedToId: number;
-  assignedToName: string;
-}
 
-export interface AssignableUser {
-  id: number;
-  name: string;
-  email: string;
+  assignedToIds: number[];
+  assignedToNames: string[];
+
+  isArchived: boolean;
+
+  parentTaskId: number | null;
 }
 
 export interface CreateTaskRequest {
   title: string;
   description: string | null;
   dueDate: string | null;
-  assignedToId: number | null;
+  assignedToIds: number[];
+  parentTaskId: number | null;
 }
 
 export interface UpdateTaskRequest {
   title: string;
   description: string | null;
   dueDate: string | null;
-  assignedToId: number | null;
+  assignedToIds: number[];
+  parentTaskId: number | null;
 }
 
 export interface UpdateTaskStatusRequest {
@@ -86,4 +94,16 @@ export interface UpdateUserRequest {
   password?: string | null;
   canReadUsers?: boolean;
   canWriteUsers?: boolean;
+}
+
+ export interface AuditLog {
+  id: number;
+  taskId: number;
+  userId: number;
+  userName: string;
+  action: string;
+  fieldName: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  createdDate: string;
 }
