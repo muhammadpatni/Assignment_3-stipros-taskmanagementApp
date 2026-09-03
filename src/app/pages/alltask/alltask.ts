@@ -301,12 +301,7 @@ export class AllTask implements OnInit {
     this.formError.set('');
     this.assigneeSearch.set('');
     this.assigneeDropdownOpen = false;
-    this.taskForm.reset({
-      title: '',
-      description: '',
-      dueDate: null,
-      assignedToIds: []
-    });
+    this.taskForm.reset({ title: '', description: '', dueDate: null, assignedToIds: [] });
   }
 
   addSubTask(parentTask: TaskResponse): void { this.openCreateTask(parentTask); }

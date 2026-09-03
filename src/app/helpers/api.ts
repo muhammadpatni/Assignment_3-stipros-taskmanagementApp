@@ -1,5 +1,4 @@
 export const API_URL = 'https://localhost:7253';
-
 export const API = {
   auth: `${API_URL}/Auth`,
   tasks: `${API_URL}/Task`,
