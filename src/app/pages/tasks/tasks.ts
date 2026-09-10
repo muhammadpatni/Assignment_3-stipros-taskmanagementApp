@@ -105,18 +105,29 @@ export class Tasks implements OnInit {
   loadMyTasks(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.http.get<TaskResponse[]>(`${API.tasks}/my`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    const user = this.auth.getCurrentUser();
+
+    if (!user) {
+      this.loading.set(false);
+      return;
+    }
+
+    const whereClause = `(t.CreatedBy = ${user.userId} OR EXISTS(SELECT 1 FROM OPENJSON(t.AssignedTo) j WHERE TRY_CONVERT(INT, j.value) = ${user.userId}))`;
+
+    this.http.post<TaskResponse[]>(
+      `${API.tasks}/my`,
+      { whereClause },
+      { headers: authHeaders(this.auth.getToken()) },
+    ).subscribe({
       next: (response) => {
         this.tasks.set(response);
         this.loading.set(false);
       },
       error: (error) => {
         console.error('Failed to load tasks:', error);
-        this.errorMessage.set(
-          getErrorMessage(error, 'Unable to load tasks. Please try again.')
-        );
+        this.errorMessage.set(getErrorMessage(error, 'Unable to load tasks. Please try again.'));
         this.loading.set(false);
-      }
+      },
     });
   }
 
