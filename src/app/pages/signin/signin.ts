@@ -12,6 +12,7 @@ import { API, getErrorMessage } from '../../helpers/api';
   styleUrl: './signin.css',
 })
 export class Signin {
+
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -39,7 +40,7 @@ export class Signin {
         name: formValue.username ?? '',
         email: formValue.email ?? '',
         contact: formValue.contact ?? '',
-        password: formValue.password ?? '',
+        password: formValue.password ?? ''
       };
       this.http.post<void>(`${API.auth}/register`, signupData).subscribe({
         next: () => {
@@ -51,7 +52,7 @@ export class Signin {
           console.log('Registration failed:', error);
           this.loading = false;
           alert(getErrorMessage(error, 'Registration failed.'));
-        },
+        }
       });
     }
   }

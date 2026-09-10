@@ -12,9 +12,8 @@ export class Layout {
   public auth = inject(Auth);
   private router = inject(Router);
   sidebarOpen = true;
-  toggleSidebar(): void {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
+  toggleSidebar(): void { this.sidebarOpen = !this.sidebarOpen; }
+  closeSidebarOnMobile(): void { if (window.innerWidth <= 768) { this.sidebarOpen = false; } }
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
