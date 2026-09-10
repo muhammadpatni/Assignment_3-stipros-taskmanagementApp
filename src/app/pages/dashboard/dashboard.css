@@ -7,8 +7,6 @@
   margin: 0 auto;
 }
 
-/* ================= HEADER ================= */
-
 .page-header {
   margin-bottom: 22px;
 }
@@ -25,8 +23,6 @@
   font-size: 14px;
 }
 
-/* ================= ERROR ================= */
-
 .error-message {
   margin-bottom: 18px;
   padding: 13px 15px;
@@ -39,8 +35,6 @@
 
   font-size: 13px;
 }
-
-/* ================= WELCOME ================= */
 
 .welcome-card {
   margin-bottom: 22px;
@@ -75,13 +69,10 @@
   font-size: 13px;
 }
 
-/* ================= STATS ================= */
-
 .stats-grid {
   display: grid;
 
-  grid-template-columns:
-    repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 
   gap: 14px;
 
@@ -164,8 +155,6 @@
   line-height: 1;
 }
 
-/* ================= CONTENT CARD ================= */
-
 .content-card {
   margin-bottom: 20px;
 
@@ -198,8 +187,6 @@
 
   font-size: 11px;
 }
-
-/* ================= RECENT TASKS ================= */
 
 .recent-task-list {
   display: flex;
@@ -253,8 +240,6 @@
   white-space: nowrap;
 }
 
-/* ================= STATUS ================= */
-
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -283,8 +268,6 @@
   background: #ecfdf5;
   color: #047857;
 }
-
-/* ================= LOADING ================= */
 
 .dashboard-loading {
   min-height: 150px;
@@ -319,8 +302,6 @@
     transform: rotate(360deg);
   }
 }
-
-/* ================= EMPTY ================= */
 
 .empty-state {
   padding: 45px 20px;
@@ -362,13 +343,10 @@
   font-size: 12px;
 }
 
-/* ================= PERMISSIONS ================= */
-
 .permission-grid {
   display: grid;
 
-  grid-template-columns:
-    repeat(2, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .permission-item {
@@ -391,7 +369,7 @@
   border-bottom: 0;
 }
 
-.permission-item>span {
+.permission-item > span {
   color: #374151;
 
   font-size: 12px;
@@ -420,10 +398,7 @@
   color: #6b7280;
 }
 
-/* ================= RESPONSIVE ================= */
-
 @media (max-width: 700px) {
-
   .stats-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -443,11 +418,9 @@
   .permission-item:last-child {
     border-bottom: 0;
   }
-
 }
 
 @media (max-width: 500px) {
-
   .stats-grid {
     grid-template-columns: 1fr;
   }
@@ -461,7 +434,6 @@
     align-items: flex-start;
     flex-direction: column;
   }
-
 }
 
 .dashboard-task-list {

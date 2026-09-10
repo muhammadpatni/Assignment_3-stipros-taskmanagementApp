@@ -8,4 +8,14 @@ export const API = {
 export const authHeaders = (token: string | null): Record<string, string> => ({
   Authorization: `Bearer ${token ?? ''}`,
 });
-export const getErrorMessage = (error: any, fallback: string): string => error?.error?.message || error?.error || fallback;
+
+export const getErrorMessage = (error: unknown, fallback: string): string => {
+  const response = error as { error?: unknown };
+
+  if (typeof response?.error === 'string') {
+    return response.error;
+  }
+
+  const message = (response?.error as { message?: unknown })?.message;
+  return typeof message === 'string' ? message : fallback;
+};

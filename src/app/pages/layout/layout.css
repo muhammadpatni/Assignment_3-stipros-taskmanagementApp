@@ -1,21 +1,20 @@
 :host {
   display: block;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-layout {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
+  overflow: hidden;
   background: #f5f7fb;
 }
-
-
-/* ================= SIDEBAR ================= */
 
 .sidebar {
   width: 270px;
   min-width: 270px;
-  min-height: 100vh;
+  height: 100vh;
 
   display: flex;
   flex-direction: column;
@@ -31,16 +30,10 @@
   overflow: hidden;
 }
 
-
-/* Sidebar Closed */
-
 .sidebar-closed .sidebar {
   width: 0;
   min-width: 0;
 }
-
-
-/* ================= SIDEBAR HEADER ================= */
 
 .sidebar-header {
   height: 80px;
@@ -92,9 +85,6 @@
   font-size: 11px;
   color: #6b7280;
 }
-
-
-/* ================= USER BOX ================= */
 
 .user-box {
   margin: 18px 14px;
@@ -156,9 +146,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-
-/* ================= NAVIGATION ================= */
 
 .sidebar-nav {
   flex: 1;
@@ -233,9 +220,6 @@
   font-size: 16px;
 }
 
-
-/* ================= SIDEBAR BOTTOM ================= */
-
 .sidebar-bottom {
   padding: 14px;
 
@@ -291,21 +275,15 @@
   background: #fee2e2;
 }
 
-
-/* ================= MAIN ================= */
-
 .main-content {
   flex: 1;
   min-width: 0;
-
-  min-height: 100vh;
+  min-height: 0;
+  height: 100vh;
 
   display: flex;
   flex-direction: column;
 }
-
-
-/* ================= TOP HEADER ================= */
 
 .top-header {
   height: 70px;
@@ -389,38 +367,28 @@
   color: #6b7280;
 }
 
-
-/* ================= PAGE CONTENT ================= */
-
 .page-content {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
 
   padding: 24px;
 
-  overflow-x: auto;
+  overflow: auto;
 }
 
-
-/* ================= MOBILE ================= */
-
 @media (max-width: 768px) {
-
   .sidebar {
     position: fixed;
-
     top: 0;
     left: 0;
-
     z-index: 1000;
-
     height: 100vh;
-
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
   }
 
   .sidebar-closed .sidebar {
     transform: translateX(-100%);
-
     width: 270px;
     min-width: 270px;
   }

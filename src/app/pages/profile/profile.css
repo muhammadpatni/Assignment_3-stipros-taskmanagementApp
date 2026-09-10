@@ -84,7 +84,9 @@
   color: #111827;
   font-size: 13px;
   outline: none;
-  transition: border-color .2s ease, box-shadow .2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .form-group input::placeholder {
@@ -93,7 +95,7 @@
 
 .form-group input:focus {
   border-color: #111827;
-  box-shadow: 0 0 0 3px rgba(17, 24, 39, .08);
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
 }
 
 .form-group input.invalid {
@@ -190,7 +192,7 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: background .2s ease;
+  transition: background 0.2s ease;
 }
 
 .save-button:hover:not(:disabled) {
@@ -378,10 +380,10 @@
   box-sizing: border-box;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="password"] {
+input[type='text'],
+input[type='email'],
+input[type='tel'],
+input[type='password'] {
   width: 100%;
   max-width: 100%;
   min-width: 0;

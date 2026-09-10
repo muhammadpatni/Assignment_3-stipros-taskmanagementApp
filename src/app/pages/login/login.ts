@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../services/auth';
@@ -8,7 +8,7 @@ import { API } from '../../helpers/api';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule,RouterLink],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -17,14 +17,17 @@ export class Login {
   errorMessage = '';
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', Validators.required)
+    password: new FormControl('', Validators.required),
   });
   private http = inject(HttpClient);
   private authService = inject(Auth);
-  private router = inject(Router)
+  private router = inject(Router);
   login(): void {
     this.errorMessage = '';
-    if (this.loginForm.invalid) { this.loginForm.markAllAsTouched(); return; }
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
     this.loading = true;
     const loginData = this.loginForm.getRawValue();
     this.http.post<LoginResponse>(`${API.auth}/login`, loginData).subscribe({
@@ -35,7 +38,7 @@ export class Login {
           email: response.email,
           isMasterAdmin: response.isMasterAdmin,
           canReadUsers: response.canReadUsers,
-          canWriteUsers: response.canWriteUsers
+          canWriteUsers: response.canWriteUsers,
         };
         this.authService.setAuth(response.token, user);
         this.loading = false;
@@ -43,9 +46,12 @@ export class Login {
       },
       error: (error) => {
         this.loading = false;
-        if (error.status === 401) { this.errorMessage = 'Invalid email or password.'; }
-        else { this.errorMessage = 'Something went wrong. Please try again.'; }
-      }
+        if (error.status === 401) {
+          this.errorMessage = 'Invalid email or password.';
+        } else {
+          this.errorMessage = 'Something went wrong. Please try again.';
+        }
+      },
     });
   }
 }

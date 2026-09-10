@@ -27,8 +27,6 @@
   color: #6b7280;
 }
 
-/* ================= BUTTON ================= */
-
 .create-button {
   height: 42px;
   padding: 0 17px;
@@ -45,8 +43,6 @@
 .create-button:hover {
   background: #1f2937;
 }
-
-/* ================= TOOLBAR ================= */
 
 .toolbar {
   display: flex;
@@ -96,8 +92,6 @@
   background: #f9fafb;
 }
 
-/* ================= ERROR ================= */
-
 .error-message {
   margin-bottom: 18px;
   padding: 13px 15px;
@@ -107,8 +101,6 @@
   color: #b91c1c;
   font-size: 13px;
 }
-
-/* ================= LOADING ================= */
 
 .loading-state {
   padding: 60px 20px;
@@ -140,13 +132,90 @@
   font-size: 13px;
 }
 
-/* ================= TABLE ================= */
-
 .user-table-container {
   overflow-x: auto;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
+}
+
+.devextreme-user-container {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+:host ::ng-deep .user-data-grid {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+}
+
+:host ::ng-deep .user-data-grid .dx-datagrid {
+  border: 0;
+  background: #fff;
+}
+
+:host ::ng-deep .user-data-grid .dx-datagrid-headers {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+:host ::ng-deep .user-data-grid .dx-header-row > td {
+  height: 30px;
+  padding: 14px 16px;
+  border: 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .user-data-grid .dx-datagrid-rowsview {
+  border: 0;
+  background: #fff;
+}
+
+:host ::ng-deep .user-data-grid .dx-data-row > td {
+  min-height: 68px;
+  padding: 16px;
+  border: 0;
+  border-bottom: 1px solid #f0f1f4;
+  color: #374151;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .user-data-grid .dx-data-row:hover > td {
+  background: #fafafa;
+}
+
+:host ::ng-deep .user-data-grid .dx-datagrid-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+:host ::ng-deep .user-data-grid .dx-scrollable-scrollbar {
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: #f1f5f9;
+}
+
+:host ::ng-deep .user-data-grid .dx-scrollable-scrollbar .dx-scrollable-scroll {
+  background: #94a3b8;
+  border-radius: 999px;
 }
 
 .user-table {
@@ -186,8 +255,6 @@
 .user-table tbody tr:hover {
   background: #fafafa;
 }
-
-/* ================= USER ================= */
 
 .user-info {
   display: flex;
@@ -243,13 +310,6 @@
   font-weight: 700;
 }
 
-/* ================= EMAIL ================= */
-
-/*
-  Email was 11px previously.
-  Now it is 14px.
-*/
-
 .user-email-table {
   display: inline-block;
 
@@ -261,8 +321,6 @@
   white-space: nowrap;
 }
 
-/* ================= CONTACT ================= */
-
 .user-contact {
   color: #4b5563;
   font-size: 14px;
@@ -273,16 +331,12 @@
   font-size: 13px;
 }
 
-/* ================= ACCESS ================= */
-
 .access-list {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
 }
-
-/* Base chip */
 
 .access-badge {
   display: inline-flex;
@@ -301,8 +355,6 @@
   white-space: nowrap;
 }
 
-/* Small dot inside chip */
-
 .badge-dot {
   width: 6px;
   height: 6px;
@@ -312,16 +364,12 @@
   background: currentColor;
 }
 
-/* Master Admin */
-
 .access-badge.master {
   background: #fff7ed;
   color: #c2410c;
 
   border: 1px solid #fed7aa;
 }
-
-/* Read */
 
 .access-badge.read {
   background: #eff6ff;
@@ -330,8 +378,6 @@
   border: 1px solid #bfdbfe;
 }
 
-/* Write */
-
 .access-badge.write {
   background: #f5f3ff;
   color: #6d28d9;
@@ -339,16 +385,12 @@
   border: 1px solid #ddd6fe;
 }
 
-/* Normal User */
-
 .access-badge.normal {
   background: #f3f4f6;
   color: #4b5563;
 
   border: 1px solid #e5e7eb;
 }
-
-/* ================= ACTIONS ================= */
 
 .actions {
   display: flex;
@@ -393,8 +435,6 @@
   cursor: not-allowed;
 }
 
-/* ================= EMPTY ================= */
-
 .empty-state {
   padding: 65px 20px;
   text-align: center;
@@ -434,8 +474,6 @@
   font-size: 13px;
 }
 
-/* ================= MODAL ================= */
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -462,11 +500,8 @@
 
   border-radius: 14px;
 
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
 }
-
-/* ================= MODAL HEADER ================= */
 
 .modal-header {
   display: flex;
@@ -514,8 +549,6 @@
 .close-button:hover {
   background: #e5e7eb;
 }
-
-/* ================= FORM ================= */
 
 .user-form {
   padding: 22px;
@@ -569,8 +602,6 @@
   color: #9ca3af;
 }
 
-/* ================= HINTS ================= */
-
 .field-hint {
   display: block;
 
@@ -590,8 +621,6 @@
 
   font-size: 11px;
 }
-
-/* ================= ERROR ================= */
 
 .field-error {
   display: block;
@@ -616,8 +645,6 @@
 
   font-size: 12px;
 }
-
-/* ================= PERMISSIONS ================= */
 
 .permissions-section {
   margin-top: 5px;
@@ -672,7 +699,7 @@
   border-top: 1px solid #eef0f3;
 }
 
-.permission-option input[type="checkbox"] {
+.permission-option input[type='checkbox'] {
   width: 16px;
   height: 16px;
 
@@ -704,8 +731,6 @@
 
   line-height: 1.4;
 }
-
-/* ================= FORM ACTIONS ================= */
 
 .form-actions {
   display: flex;
@@ -762,18 +787,13 @@
   cursor: not-allowed;
 }
 
-/* ================= MOBILE ================= */
-
 @media (max-width: 900px) {
-
   .user-table {
     min-width: 1000px;
   }
-
 }
 
 @media (max-width: 700px) {
-
   .page-header {
     align-items: flex-start;
     flex-direction: column;
@@ -795,11 +815,9 @@
   .refresh-button {
     width: 100%;
   }
-
 }
 
 @media (max-width: 600px) {
-
   .modal-overlay {
     padding: 10px;
   }
@@ -822,5 +840,4 @@
   .save-button {
     width: 100%;
   }
-
 }
