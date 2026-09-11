@@ -3,13 +3,23 @@ import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { DxDataGridModule, DxTemplateModule } from 'devextreme-angular';
-import { CreateUserRequest, UpdateUserRequest, UserResponse } from '../../interfaces/interfaces';
+import { UserResponse } from '../../interfaces/interfaces';
 import { API, authHeaders, getErrorMessage } from '../../helpers/api';
 import {
   canDeleteUser, canEditUser, canEditUserPermissions
   , canManageTasks
 } from '../../helpers/permissions';
 import { Auth } from '../../services/auth';
+
+type SaveUserPayload = {
+  id: number | null;
+  name: string;
+  email: string;
+  contact: string | null;
+  password: string | null;
+  canReadUsers: boolean;
+  canWriteUsers: boolean;
+};
 
 @Component({
   selector: 'app-users',
@@ -77,8 +87,6 @@ export class Users implements OnInit {
 
   canCreateUser = (): boolean => canManageTasks(this.auth.getCurrentUser());
 
-  userRowClicked(user: UserResponse): void { this.editUser(user); }
-
   canShowPermissionSection(): boolean {
     const currentUser = this.auth.getCurrentUser();
     if (!currentUser) { return false; }
@@ -128,32 +136,40 @@ export class Users implements OnInit {
 
   saveUser(): void {
     this.formError.set('');
-    if (this.userForm.invalid) return void this.userForm.markAllAsTouched();
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
     const currentUser = this.auth.getCurrentUser();
-    if (!currentUser) return;
+    if (!currentUser) {
+      return;
+    }
+
     this.savingUser = true;
     const value = this.userForm.getRawValue();
-    const update = this.editingUserId !== null;
-    const payload: CreateUserRequest | UpdateUserRequest = {
+
+    const payload: SaveUserPayload = {
+      id: this.editingUserId,
       name: value.name?.trim() ?? '',
+      email: value.email?.trim() ?? '',
       contact: value.contact?.trim() || null,
       password: value.password?.trim() || null,
+      canReadUsers: value.canReadUsers ?? false,
+      canWriteUsers: value.canWriteUsers ?? false,
     };
 
-    if (update && this.editingUserId !== currentUser.userId && canManageTasks(currentUser)) {
-      Object.assign(payload, { canReadUsers: value.canReadUsers ?? false, canWriteUsers: value.canWriteUsers ?? false });
-    }
-    if (!update) Object.assign(payload, {
-      email: value.email?.trim() ?? '', password: value.password?.trim() ?? '',
-      canReadUsers: value.canReadUsers ?? false, canWriteUsers: value.canWriteUsers ?? false,
-    });
-
-    const request = update ? this.http.put<UserResponse>(`${API.users}/${this.editingUserId}`, payload, { headers: authHeaders(this.auth.getToken()) })
-      : this.http.post<UserResponse>(API.users, payload, { headers: authHeaders(this.auth.getToken()) });
-
-    request.subscribe({
+    this.http.post<UserResponse>(`${API.users}/save`, payload, {
+      headers: authHeaders(this.auth.getToken()),
+    }).subscribe({
       next: () => { this.savingUser = false; this.cancelUserForm(); this.loadUsers(); },
-      error: error => { this.savingUser = false; this.formError.set(getErrorMessage(error, `Unable to ${update ? 'update' : 'create'} user.`)); },
+      error: error => {
+        this.savingUser = false;
+        this.formError.set(getErrorMessage(
+          error,
+          this.editingUserId !== null ? 'Unable to update user.' : 'Unable to create user.',
+        ));
+      },
     });
   }
 

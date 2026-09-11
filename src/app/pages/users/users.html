@@ -5,7 +5,7 @@
       <p>Manage users and their permissions</p>
     </div>
     @if (canCreateUser()) {
-      <button type="button" class="create-button" (click)="createUser()">+ Create User</button>
+    <button type="button" class="create-button" (click)="createUser()">+ Create User</button>
     }
   </div>
   <div class="toolbar">
@@ -18,268 +18,214 @@
     </button>
   </div>
   @if (errorMessage()) {
-    <div class="error-message">{{ errorMessage() }}</div>
+  <div class="error-message">{{ errorMessage() }}</div>
   }
   @if (loading()) {
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading users...</p>
-    </div>
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading users...</p>
+  </div>
   }
   @if (!loading() && !errorMessage()) {
-    @if (filteredUsers().length > 0) {
-      <div class="user-table-container devextreme-user-container">
-        <dx-data-grid
-          class="user-data-grid"
-          [dataSource]="filteredUsers()"
-          [showBorders]="true"
-          [allowColumnResizing]="false"
-          (onRowClick)="userRowClicked($event.data)"
-        >
-          <dxo-paging [enabled]="false"></dxo-paging>
-          <dxo-sorting [mode]="'none'"></dxo-sorting>
-          <dxo-scrolling mode="standard" [useNative]="true" showScrollbar="always"></dxo-scrolling>
+  @if (filteredUsers().length > 0) {
+  <div class="user-table-container devextreme-user-container">
+    <dx-data-grid class="user-data-grid" [dataSource]="filteredUsers()" [showBorders]="true"
+      [allowColumnResizing]="false" (onRowClick)="editUser($event.data)">
+      <dxo-sorting [mode]="'none'"></dxo-sorting>
+      <dxo-scrolling mode="standard"  showScrollbar="always"></dxo-scrolling>
 
-          <dxi-column
-            dataField="name"
-            caption="User"
-            cellTemplate="userCell"
-            [width]="245"
-          ></dxi-column>
-          <div *dxTemplate="let cell of 'userCell'">
-            <div class="user-info">
-              <div class="user-avatar">{{ cell.data.name.charAt(0).toUpperCase() }}</div>
-              <div class="user-details">
-                <div class="user-name-row">
-                  <strong class="user-name">{{ cell.data.name }}</strong>
-                  @if (isCurrentUser(cell.data)) {
-                    <span class="self-label">You</span>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <dxi-column
-            dataField="email"
-            caption="Email"
-            cellTemplate="emailCell"
-            [width]="260"
-          ></dxi-column>
-          <div *dxTemplate="let cell of 'emailCell'">
-            <span class="user-email-table">{{ cell.data.email }}</span>
-          </div>
-
-          <dxi-column
-            dataField="contact"
-            caption="Contact"
-            cellTemplate="contactCell"
-            [width]="180"
-          ></dxi-column>
-          <div *dxTemplate="let cell of 'contactCell'">
-            @if (cell.data.contact) {
-              <span class="user-contact">{{ cell.data.contact }}</span>
-            } @else {
-              <span class="no-value">-</span>
-            }
-          </div>
-
-          <dxi-column caption="Access" cellTemplate="accessCell" [width]="230"></dxi-column>
-          <div *dxTemplate="let cell of 'accessCell'">
-            <div class="access-list">
-              @if (cell.data.isMasterAdmin) {
-                <span class="access-badge master"><span class="badge-dot"></span>Master Admin</span>
-              } @else {
-                @if (cell.data.canReadUsers) {
-                  <span class="access-badge read"><span class="badge-dot"></span>Read</span>
-                }
-                @if (cell.data.canWriteUsers) {
-                  <span class="access-badge write"><span class="badge-dot"></span>Write</span>
-                }
-                @if (!cell.data.canReadUsers && !cell.data.canWriteUsers) {
-                  <span class="access-badge normal"
-                    ><span class="badge-dot"></span>Normal User</span
-                  >
-                }
+      <dxi-column dataField="name" caption="User" cellTemplate="userCell" [width]="245"></dxi-column>
+      <div *dxTemplate="let cell of 'userCell'">
+        <div class="user-info">
+          <div class="user-avatar">{{ cell.data.name.charAt(0).toUpperCase() }}</div>
+          <div class="user-details">
+            <div class="user-name-row">
+              <strong class="user-name">{{ cell.data.name }}</strong>
+              @if (isCurrentUser(cell.data)) {
+              <span class="self-label">You</span>
               }
             </div>
           </div>
-
-          <dxi-column caption="Actions" cellTemplate="actionsCell" [width]="210"></dxi-column>
-          <div *dxTemplate="let cell of 'actionsCell'">
-            <div class="actions" (click)="$event.stopPropagation()">
-              @if (canEditUser(cell.data)) {
-                <button type="button" class="action-button edit" (click)="editUser(cell.data)">
-                  Edit
-                </button>
-              }
-              @if (canDeleteUser(cell.data)) {
-                <button
-                  type="button"
-                  class="action-button delete"
-                  (click)="deleteUser(cell.data)"
-                  [disabled]="deletingUserId === cell.data.id"
-                >
-                  @if (deletingUserId === cell.data.id) {
-                    Deleting...
-                  } @else {
-                    Delete
-                  }
-                </button>
-              }
-            </div>
-          </div>
-        </dx-data-grid>
+        </div>
       </div>
-    } @else {
-      <div class="empty-state">
-        <div class="empty-icon">&#128100;</div>
-        <h2>No Users Found</h2>
-        <p>No users match your search.</p>
-        @if (canCreateUser()) {
-          <button type="button" class="create-button" (click)="createUser()">+ Create User</button>
+
+      <dxi-column dataField="email" caption="Email" cellTemplate="emailCell" [width]="260"></dxi-column>
+      <div *dxTemplate="let cell of 'emailCell'">
+        <span class="user-email-table">{{ cell.data.email }}</span>
+      </div>
+
+      <dxi-column dataField="contact" caption="Contact" cellTemplate="contactCell" [width]="180"></dxi-column>
+      <div *dxTemplate="let cell of 'contactCell'">
+        @if (cell.data.contact) {
+        <span class="user-contact">{{ cell.data.contact }}</span>
+        } @else {
+        <span class="no-value">-</span>
         }
       </div>
+
+      <dxi-column caption="Access" cellTemplate="accessCell" [width]="230"></dxi-column>
+      <div *dxTemplate="let cell of 'accessCell'">
+        <div class="access-list">
+          @if (cell.data.isMasterAdmin) {
+          <span class="access-badge master"><span class="badge-dot"></span>Master Admin</span>
+          } @else {
+          @if (cell.data.canReadUsers) {
+          <span class="access-badge read"><span class="badge-dot"></span>Read</span>
+          }
+          @if (cell.data.canWriteUsers) {
+          <span class="access-badge write"><span class="badge-dot"></span>Write</span>
+          }
+          @if (!cell.data.canReadUsers && !cell.data.canWriteUsers) {
+          <span class="access-badge normal"><span class="badge-dot"></span>Normal User</span>
+          }
+          }
+        </div>
+      </div>
+
+      <dxi-column caption="Actions" cellTemplate="actionsCell" [width]="210"></dxi-column>
+      <div *dxTemplate="let cell of 'actionsCell'">
+        <div class="actions" (click)="$event.stopPropagation()">
+          @if (canEditUser(cell.data)) {
+          <button type="button" class="action-button edit" (click)="editUser(cell.data)">
+            Edit
+          </button>
+          }
+          @if (canDeleteUser(cell.data)) {
+          <button type="button" class="action-button delete" (click)="deleteUser(cell.data)"
+            [disabled]="deletingUserId === cell.data.id">
+            @if (deletingUserId === cell.data.id) {
+            Deleting...
+            } @else {
+            Delete
+            }
+          </button>
+          }
+        </div>
+      </div>
+    </dx-data-grid>
+  </div>
+  } @else {
+  <div class="empty-state">
+    <div class="empty-icon">&#128100;</div>
+    <h2>No Users Found</h2>
+    <p>No users match your search.</p>
+    @if (canCreateUser()) {
+    <button type="button" class="create-button" (click)="createUser()">+ Create User</button>
     }
+  </div>
+  }
   }
   @if (showUserForm()) {
-    <div class="modal-overlay" (click)="cancelUserForm()">
-      <div class="user-modal" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <div>
-            <h2>
-              {{ editingUserId === null ? 'Create User' : 'Edit User' }}
-            </h2>
-            <p>
-              {{
-                editingUserId === null ? 'Create a new user account.' : 'Update user information.'
-              }}
-            </p>
+  <div class="modal-overlay" (click)="cancelUserForm()">
+    <div class="user-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2>
+            {{ editingUserId === null ? 'Create User' : 'Edit User' }}
+          </h2>
+          <p>
+            {{
+            editingUserId === null ? 'Create a new user account.' : 'Update user information.'
+            }}
+          </p>
+        </div>
+        <button type="button" class="close-button" (click)="cancelUserForm()" [disabled]="savingUser">
+          &#215;
+        </button>
+      </div>
+      <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="user-form">
+        @if (formError()) {
+        <div class="form-error">{{ formError() }}</div>
+        }
+        <div class="form-group">
+          <label for="name"> Name <span>*</span> </label>
+          <input id="name" type="text" formControlName="name" placeholder="Enter name" maxlength="100" />
+          @if (isFieldInvalid('name')) {
+          <small class="field-error">
+            @if (userForm.get('name')?.errors?.['required']) {
+            Name is required.
+            } @else if (userForm.get('name')?.errors?.['maxlength']) {
+            Name cannot exceed 100 characters.
+            }
+          </small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="email"> Email <span>*</span> </label>
+          <input id="email" type="email" formControlName="email" placeholder="Enter email" />
+          @if (editingUserId !== null) {
+          <small class="field-hint"> Email cannot be changed. </small>
+          }
+          @if (isFieldInvalid('email')) {
+          <small class="field-error">
+            @if (userForm.get('email')?.errors?.['required']) {
+            Email is required.
+            } @else if (userForm.get('email')?.errors?.['email']) {
+            Enter a valid email address.
+            }
+          </small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="contact"> Contact </label>
+          <input id="contact" type="text" formControlName="contact" placeholder="Enter contact" maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label for="password">
+            Password
+            @if (editingUserId === null) {
+            <span>*</span>
+            }
+          </label>
+          <input id="password" type="password" formControlName="password" [placeholder]="
+                editingUserId === null ? 'Enter password' : 'Leave empty to keep current password'
+              " />
+          @if (editingUserId !== null) {
+          <small class="password-hint"> Leave empty to keep the current password. </small>
+          }
+        </div>
+        @if (canShowPermissionSection()) {
+        <div class="permissions-section">
+          <div class="permissions-header">
+            <div>
+              <h3>User Permissions</h3>
+              <p>Control what this user can access.</p>
+            </div>
           </div>
-          <button
-            type="button"
-            class="close-button"
-            (click)="cancelUserForm()"
-            [disabled]="savingUser"
-          >
-            &#215;
+          <div class="permission-options">
+            <label class="permission-option">
+              <input type="checkbox" formControlName="canReadUsers" />
+              <span class="permission-content">
+                <span class="permission-label"> Can Read Users </span>
+                <span class="permission-description"> Allow the user to view users. </span>
+              </span>
+            </label>
+            <label class="permission-option">
+              <input type="checkbox" formControlName="canWriteUsers" />
+              <span class="permission-content">
+                <span class="permission-label"> Can Write Users </span>
+                <span class="permission-description">
+                  Allow the user to create and update users.
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+        }
+        <div class="form-actions">
+          <button type="button" class="cancel-button" (click)="cancelUserForm()" [disabled]="savingUser">
+            Cancel
+          </button>
+          <button type="submit" class="save-button" [disabled]="savingUser">
+            @if (savingUser) {
+            Saving...
+            } @else {
+            {{ editingUserId === null ? 'Create User' : 'Update User' }}
+            }
           </button>
         </div>
-        <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="user-form">
-          @if (formError()) {
-            <div class="form-error">{{ formError() }}</div>
-          }
-          <div class="form-group">
-            <label for="name"> Name <span>*</span> </label>
-            <input
-              id="name"
-              type="text"
-              formControlName="name"
-              placeholder="Enter name"
-              maxlength="100"
-            />
-            @if (isFieldInvalid('name')) {
-              <small class="field-error">
-                @if (userForm.get('name')?.errors?.['required']) {
-                  Name is required.
-                } @else if (userForm.get('name')?.errors?.['maxlength']) {
-                  Name cannot exceed 100 characters.
-                }
-              </small>
-            }
-          </div>
-          <div class="form-group">
-            <label for="email"> Email <span>*</span> </label>
-            <input id="email" type="email" formControlName="email" placeholder="Enter email" />
-            @if (editingUserId !== null) {
-              <small class="field-hint"> Email cannot be changed. </small>
-            }
-            @if (isFieldInvalid('email')) {
-              <small class="field-error">
-                @if (userForm.get('email')?.errors?.['required']) {
-                  Email is required.
-                } @else if (userForm.get('email')?.errors?.['email']) {
-                  Enter a valid email address.
-                }
-              </small>
-            }
-          </div>
-          <div class="form-group">
-            <label for="contact"> Contact </label>
-            <input
-              id="contact"
-              type="text"
-              formControlName="contact"
-              placeholder="Enter contact"
-              maxlength="50"
-            />
-          </div>
-          <div class="form-group">
-            <label for="password">
-              Password
-              @if (editingUserId === null) {
-                <span>*</span>
-              }
-            </label>
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              [placeholder]="
-                editingUserId === null ? 'Enter password' : 'Leave empty to keep current password'
-              "
-            />
-            @if (editingUserId !== null) {
-              <small class="password-hint"> Leave empty to keep the current password. </small>
-            }
-          </div>
-          @if (canShowPermissionSection()) {
-            <div class="permissions-section">
-              <div class="permissions-header">
-                <div>
-                  <h3>User Permissions</h3>
-                  <p>Control what this user can access.</p>
-                </div>
-              </div>
-              <div class="permission-options">
-                <label class="permission-option">
-                  <input type="checkbox" formControlName="canReadUsers" />
-                  <span class="permission-content">
-                    <span class="permission-label"> Can Read Users </span>
-                    <span class="permission-description"> Allow the user to view users. </span>
-                  </span>
-                </label>
-                <label class="permission-option">
-                  <input type="checkbox" formControlName="canWriteUsers" />
-                  <span class="permission-content">
-                    <span class="permission-label"> Can Write Users </span>
-                    <span class="permission-description">
-                      Allow the user to create and update users.
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </div>
-          }
-          <div class="form-actions">
-            <button
-              type="button"
-              class="cancel-button"
-              (click)="cancelUserForm()"
-              [disabled]="savingUser"
-            >
-              Cancel
-            </button>
-            <button type="submit" class="save-button" [disabled]="savingUser">
-              @if (savingUser) {
-                Saving...
-              } @else {
-                {{ editingUserId === null ? 'Create User' : 'Update User' }}
-              }
-            </button>
-          </div>
-        </form>
-      </div>
+      </form>
     </div>
+  </div>
   }
 </div>

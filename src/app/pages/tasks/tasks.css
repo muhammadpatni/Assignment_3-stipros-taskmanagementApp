@@ -267,6 +267,10 @@
   overflow-y: auto !important;
 }
 
+:host ::ng-deep .task-data-grid .dx-datagrid-content {
+  min-width: 100% !important;
+}
+
 :host ::ng-deep .task-data-grid .dx-data-row > td {
   height: 61px;
   padding: 15px 16px;
@@ -284,9 +288,39 @@
 
 :host ::ng-deep .task-data-grid .dx-datagrid-table {
   width: 100% !important;
-  min-width: 0 !important;
+  min-width: 100% !important;
   table-layout: fixed;
   border-collapse: collapse;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(1),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(1) {
+  width: 22% !important;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(2),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(2) {
+  width: 11% !important;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(3),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(3) {
+  width: 12% !important;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(4),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(4) {
+  width: 15% !important;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(5),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(5) {
+  width: 22% !important;
+}
+
+:host ::ng-deep .task-data-grid .dx-datagrid-headers table col:nth-child(6),
+:host ::ng-deep .task-data-grid .dx-datagrid-rowsview table col:nth-child(6) {
+  width: 18% !important;
 }
 
 :host ::ng-deep .task-data-grid .dx-scrollable-scrollbar {

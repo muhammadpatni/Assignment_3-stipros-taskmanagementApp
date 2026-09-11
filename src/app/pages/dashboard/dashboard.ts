@@ -28,13 +28,24 @@ export class Dashboard implements OnInit {
   ngOnInit(): void { this.loadDashboardData(); }
 
   loadDashboardData(): void {
+    const user = this.auth.getCurrentUser();
+    if (!user) {
+      return;
+    }
+
     const headers = authHeaders(this.auth.getToken());
-    this.http.get<TaskResponse[]>(`${API.tasks}/my`, { headers }).subscribe({
+    const whereClause =
+      `(t.CreatedBy = ${user.userId} OR EXISTS(` +
+      `SELECT 1 FROM OPENJSON(t.AssignedTo) j ` +
+      `WHERE TRY_CONVERT(INT, j.value) = ${user.userId}))`;
+
+    this.http.post<TaskResponse[]>(`${API.tasks}/my`, { whereClause }, { headers }).subscribe({
       next: (response) => {
-        this.tasks.set(response);
-        this.pendingTasks.set(response.filter(task => task.status === 1).length);
-        this.processTasks.set(response.filter(task => task.status === 2).length);
-        this.completedTasks.set(response.filter(task => task.status === 3).length);
+        const activeTasks = response.filter(task => task.isDeleted !== true);
+        this.tasks.set(activeTasks);
+        this.pendingTasks.set(activeTasks.filter(task => task.status === 1).length);
+        this.processTasks.set(activeTasks.filter(task => task.status === 2).length);
+        this.completedTasks.set(activeTasks.filter(task => task.status === 3).length);
       },
       error: (error) => { console.error('Failed to load dashboard tasks:', error); }
     });

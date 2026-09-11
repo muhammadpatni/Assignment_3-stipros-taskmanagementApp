@@ -28,6 +28,7 @@ export interface AssignableUser {
   id: number;
   name: string;
   email: string;
+  isDeleted?: boolean;
 }
 
 export interface TaskResponse {
@@ -45,6 +46,7 @@ export interface TaskResponse {
   assignedToNames: string[];
 
   isArchived: boolean;
+  isDeleted?: boolean;
 
   parentTaskId: number | null;
 }
@@ -77,6 +79,7 @@ export interface UserResponse {
   isMasterAdmin: boolean;
   canReadUsers: boolean;
   canWriteUsers: boolean;
+  isDeleted?: boolean;
 }
 
 export interface CreateUserRequest {

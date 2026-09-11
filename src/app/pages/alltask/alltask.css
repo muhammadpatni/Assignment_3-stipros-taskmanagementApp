@@ -1992,11 +1992,12 @@
 
 :host ::ng-deep .task-data-grid .dx-datagrid-content {
   background: #ffffff;
+  min-width: 100% !important;
 }
 
 :host ::ng-deep .task-data-grid .dx-datagrid-table {
   width: 100% !important;
-  min-width: 0 !important;
+  min-width: 100% !important;
   table-layout: fixed;
   border-collapse: collapse;
 }

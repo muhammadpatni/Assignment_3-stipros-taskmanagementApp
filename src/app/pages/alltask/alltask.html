@@ -94,7 +94,7 @@
           [dataSource]="visibleTasks()"
           [showBorders]="true"
           [allowColumnResizing]="false"
-          (onRowClick)="this.editTask($event.data)"
+          (onRowClick)="onTaskRowClick($event)"
         >
           <dxo-paging [enabled]="false"></dxo-paging>
           <dxo-sorting [mode]="'none'"></dxo-sorting>
@@ -236,6 +236,8 @@
                 [value]="cell.data.status"
                 [disabled]="updatingStatusId === cell.data.id"
                 (change)="changeStatus(cell.data, $event)"
+                (mousedown)="prepareStatusDropdown($event)"
+                (pointerdown)="prepareStatusDropdown($event)"
                 (click)="$event.stopPropagation()"
               >
                 <option value="1">Pending</option>

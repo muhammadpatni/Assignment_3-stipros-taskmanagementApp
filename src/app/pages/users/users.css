@@ -5,6 +5,7 @@
 .users-page {
   max-width: 1400px;
   margin: 0 auto;
+  min-height: 0;
 }
 
 .page-header {
@@ -142,11 +143,15 @@
 .devextreme-user-container {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  max-height: calc(100vh - 250px);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 :host ::ng-deep .user-data-grid {
   width: 100%;
+  height: auto;
+  max-height: 100%;
   min-width: 0;
   border: 0;
   border-radius: 12px;
@@ -182,6 +187,9 @@
 }
 
 :host ::ng-deep .user-data-grid .dx-datagrid-rowsview {
+  height: auto;
+  max-height: calc(100vh - 305px);
+  min-height: 0;
   border: 0;
   background: #fff;
 }
