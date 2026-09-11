@@ -3,8 +3,23 @@ import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '../../services/auth';
-import { CurrentUser, UpdateUserRequest, UserResponse } from '../../interfaces/interfaces';
+import { CurrentUser, UserResponse } from '../../interfaces/interfaces';
 import { API, authHeaders, getErrorMessage } from '../../helpers/api';
+
+// Same shape as the payload used by the Users screen — kept in one place so
+// every screen goes through the single backend Save() endpoint, never a
+// separate PUT. Permission fields are optional on purpose: a self-update
+// (profile) must NOT send them, since Save() rejects a non-master-admin
+// trying to change their own permissions.
+type SaveUserPayload = {
+  id: number | null;
+  name?: string;
+  email?: string;
+  contact?: string | null;
+  password?: string | null;
+  canReadUsers?: boolean;
+  canWriteUsers?: boolean;
+};
 
 @Component({
   selector: 'app-profile',
@@ -64,26 +79,30 @@ export class Profile {
     this.errorMessage.set('');
     this.profileForm.markAllAsTouched();
     if (this.profileForm.invalid) { return; }
+
     const user = this.auth.getCurrentUser();
     if (!user) {
       this.errorMessage.set('User information not found.');
       return;
     }
+
     this.loading = true;
     const value = this.profileForm.getRawValue();
-    const payload: UpdateUserRequest = {
+
+    const payload: SaveUserPayload = {
+      id: user.userId,
       name: value.name?.trim(),
       contact: value.contact?.trim() || null,
       password: value.password?.trim() || null
     };
 
-    this.http.put<UserResponse>(`${API.users}/${user.userId}`, payload, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    this.http.post<UserResponse>(`${API.users}/save`, payload, { headers: authHeaders(this.auth.getToken()) }).subscribe({
       next: response => {
         const currentUser = this.auth.getCurrentUser();
         if (currentUser) {
           const updatedUser: CurrentUser = {
             ...currentUser,
-            name: value.name?.trim() || currentUser.name
+            name: response.name ?? currentUser.name
           };
           this.auth.updateCurrentUser(updatedUser);
         }

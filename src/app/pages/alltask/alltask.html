@@ -14,17 +14,11 @@
     <div>
       <strong>Task permissions</strong>
       @if (auth.isMasterAdmin()) {
-        <p>
-          You have full access. You can edit, assign, archive, unarchive, update status and delete
-          tasks.
-        </p>
+        <p>You have full access. You can edit, assign, archive, unarchive, update status and delete tasks.</p>
       } @else if (auth.canWriteUsers()) {
         <p>You can edit, assign, archive, unarchive, update status and delete tasks.</p>
       } @else if (auth.canReadUsers()) {
-        <p>
-          You can manage tasks that you created or that are assigned to you. Other tasks are
-          view-only.
-        </p>
+        <p>You can manage tasks that you created or that are assigned to you. Other tasks are view-only.</p>
       }
     </div>
   </div>
@@ -65,7 +59,9 @@
       (click)="setActiveTab('all')"
     >
       <span>All Tasks</span>
-      <span class="tab-count"> {{ getActiveTaskCount() }} </span>
+      <span class="tab-count">
+        {{ getActiveTaskCount() }}
+      </span>
     </button>
     <button
       type="button"
@@ -74,11 +70,15 @@
       (click)="setActiveTab('archived')"
     >
       <span>Archived</span>
-      <span class="tab-count"> {{ getArchivedTaskCount() }} </span>
+      <span class="tab-count">
+        {{ getArchivedTaskCount() }}
+      </span>
     </button>
   </div>
   @if (errorMessage()) {
-    <div class="error-message">{{ errorMessage() }}</div>
+    <div class="error-message">
+      {{ errorMessage() }}
+    </div>
   }
   @if (loading()) {
     <div class="loading-state">
@@ -99,15 +99,11 @@
           <dxo-paging [enabled]="false"></dxo-paging>
           <dxo-sorting [mode]="'none'"></dxo-sorting>
           <dxo-scrolling mode="standard" [useNative]="true" showScrollbar="always"></dxo-scrolling>
-
           <dxi-column dataField="title" caption="Task" cellTemplate="taskCell" [width]="245">
           </dxi-column>
           <div *dxTemplate="let cell of 'taskCell'">
             <div class="task-info" [style.paddingLeft.px]="getTaskDepth(cell.data) * 22">
-              @if (cell.data.isArchived) {
-                <span class="archived-chip"> Archived </span>
-              }
-
+              @if (cell.data.isArchived) { <span class="archived-chip"> Archived </span> }
               <div class="task-title-row">
                 @if (hasChildren(cell.data.id)) {
                   <button
@@ -121,23 +117,14 @@
                   >
                     &#9654;
                   </button>
-                } @else if (getTaskDepth(cell.data) > 0) {
-                  <span class="expand-spacer"></span>
-                }
-
+                } @else if (getTaskDepth(cell.data) > 0) { <span class="expand-spacer"></span> }
                 <strong>
                   {{ cell.data.title }}
                 </strong>
-
-                @if (hasChildren(cell.data.id)) {
-                  <span class="child-count" title="Sub-tasks">
-                    {{ getChildren(cell.data.id).length }}
-                  </span>
-                }
+                @if (hasChildren(cell.data.id)) { <span class="child-count" title="Sub-tasks"> {{ getChildren(cell.data.id).length }} </span> }
               </div>
             </div>
           </div>
-
           <dxi-column
             dataField="createdByName"
             caption="Created By"
@@ -151,13 +138,11 @@
                   cell.data.createdByName ? cell.data.createdByName.charAt(0).toUpperCase() : '?'
                 }}
               </span>
-
               <span class="person-name">
                 {{ cell.data.createdByName }}
               </span>
             </div>
           </div>
-
           <dxi-column
             dataField="assignedToNames"
             caption="Assigned To"
@@ -169,25 +154,14 @@
               <div class="assigned-users">
                 <div class="avatar-stack">
                   @for (name of cell.data.assignedToNames.slice(0, 3); track $index) {
-                    <span class="person-avatar stack-avatar" [style.z-index]="3 - $index">
-                      {{ name ? name.charAt(0).toUpperCase() : '?' }}
-                    </span>
+                    <span class="person-avatar stack-avatar" [style.z-index]="3 - $index"> {{ name ? name.charAt(0).toUpperCase() : '?' }} </span>
                   }
-
-                  @if (cell.data.assignedToNames.length > 3) {
-                    <span class="avatar-more"> +{{ cell.data.assignedToNames.length - 3 }} </span>
-                  }
+                  @if (cell.data.assignedToNames.length > 3) { <span class="avatar-more"> +{{ cell.data.assignedToNames.length - 3 }} </span> }
                 </div>
-
-                <span class="assigned-names">
-                  {{ getAssignedNames(cell.data) }}
-                </span>
+                <span class="assigned-names"> {{ getAssignedNames(cell.data) }} </span>
               </div>
-            } @else {
-              <span class="no-value"> Unassigned </span>
-            }
+            } @else { <span class="no-value"> Unassigned </span> }
           </div>
-
           <dxi-column
             dataField="dueDate"
             caption="Deadline"
@@ -208,7 +182,6 @@
                 >
                   {{ cell.data.dueDate | date: 'dd MMM yyyy' }}
                 </span>
-
                 @if (
                   !cell.data.isArchived &&
                   cell.data.dueDate &&
@@ -218,11 +191,8 @@
                   <span class="overdue-chip"> Overdue </span>
                 }
               </div>
-            } @else {
-              <span class="no-value"> No deadline </span>
-            }
+            } @else { <span class="no-value"> No deadline </span> }
           </div>
-
           <dxi-column
             dataField="status"
             caption="Status"
@@ -235,7 +205,7 @@
                 class="status-select"
                 [value]="cell.data.status"
                 [disabled]="updatingStatusId === cell.data.id"
-                (change)="changeStatus(cell.data, $event)"
+                (change)="loadStatus(cell.data, $event)"
                 (mousedown)="prepareStatusDropdown($event)"
                 (pointerdown)="prepareStatusDropdown($event)"
                 (click)="$event.stopPropagation()"
@@ -244,13 +214,8 @@
                 <option value="2">In Process</option>
                 <option value="3">Completed</option>
               </select>
-            } @else {
-              <span class="status-badge" [class]="getStatusClass(cell.data.status)">
-                {{ getStatusText(cell.data.status) }}
-              </span>
-            }
+            } @else { <span class="status-badge" [class]="getStatusClass(cell.data.status)"> {{ getStatusText(cell.data.status) }} </span> }
           </div>
-
           <dxi-column caption="Actions" cellTemplate="actionsCell" [width]="255"></dxi-column>
           <div *dxTemplate="let cell of 'actionsCell'">
             <div class="actions" (click)="$event.stopPropagation()">
@@ -259,7 +224,6 @@
                   <button type="button" class="action-button edit" (click)="editTask(cell.data)">
                     Edit
                   </button>
-
                   <button
                     type="button"
                     class="action-button archive"
@@ -276,7 +240,6 @@
                   <button type="button" class="action-button view" (click)="editTask(cell.data)">
                     View
                   </button>
-
                   @if (isOwnTask(cell.data)) {
                     <button
                       type="button"
@@ -292,7 +255,6 @@
                     </button>
                   }
                 }
-
                 @if (auth.isMasterAdmin() || auth.canWriteUsers() || isOwnTask(cell.data)) {
                   <button
                     type="button"
@@ -335,30 +297,17 @@
     } @else {
       <div class="empty-state">
         <div class="empty-icon">
-          @if (activeTab() === 'archived') {
-            &#128230;
-          } @else {
-            &#10003;
-          }
+          @if (activeTab() === 'archived') { &#128230; } @else { &#10003; }
         </div>
         <h2>
-          @if (activeTab() === 'archived') {
-            No Archived Tasks
-          } @else {
-            No Tasks Found
-          }
+          @if (activeTab() === 'archived') { No Archived Tasks } @else { No Tasks Found }
         </h2>
         <p>
-          @if (activeTab() === 'archived') {
-            There are no archived tasks.
-          } @else {
-            No tasks match your current search or filter.
-          }
+          @if (activeTab() === 'archived') { There are no archived tasks. } @else { No tasks match your current search or filter. }
         </p>
       </div>
     }
   }
-
   @if (showEditForm) {
     <div class="modal-overlay" (click)="closeEditForm()">
       <div class="task-modal" (click)="onModalContentClick($event)">
@@ -391,16 +340,17 @@
           </div>
           <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
             @if (formError()) {
-              <div class="form-error">{{ formError() }}</div>
+              <div class="form-error">
+                {{ formError() }}
+              </div>
             }
             <div class="editable-section">
               <div class="section-title">Task Details</div>
               <div class="section-description">
                 @if (parentTaskForCreate) {
-                  Parent task:
-                  <strong>{{ parentTaskForCreate.title }}</strong>
+                  Parent task: <strong>{{ parentTaskForCreate.title }}</strong>
                 } @else {
-                  This will be created as a top-level ask.
+                  This will be created as a top-level task.
                 }
               </div>
               <div class="form-group">
@@ -411,9 +361,7 @@
                   maxlength="200"
                   placeholder="Enter task title"
                 />
-                @if (isFieldInvalid('title')) {
-                  <small class="field-error"> Title is required. </small>
-                }
+                @if (isFieldInvalid('title')) { <small class="field-error"> Title is required. </small> }
               </div>
               <div class="form-group">
                 <label> Description </label>
@@ -430,14 +378,16 @@
               </div>
               <div class="form-group">
                 <label> Assigned To </label>
-                @if (getSelectedAssignees().length > 0) {
+                @if (selectedAssignees().length > 0) {
                   <div class="selected-assignees">
-                    @for (user of getSelectedAssignees(); track user.id) {
+                    @for (user of selectedAssignees(); track user.id) {
                       <div class="assignee-chip">
                         <span class="assignee-avatar">
                           {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
                         </span>
-                        <span class="assignee-name"> {{ user.name }} </span>
+                        <span class="assignee-name">
+                          {{ user.name }}
+                        </span>
                         <button
                           type="button"
                           class="remove-assignee"
@@ -459,10 +409,10 @@
                     (ngModelChange)="onAssigneeSearchChange($event)"
                     (focus)="openAssigneeDropdown()"
                   />
-                  @if (assigneeDropdownOpen) {
+                  @if (assigneeDropdownOpen()) {
                     <div class="assignee-options">
-                      @if (filteredAssignableUsers.length > 0) {
-                        @for (user of filteredAssignableUsers; track user.id) {
+                      @if (filteredAssignableUsers().length > 0) {
+                        @for (user of filteredAssignableUsers(); track user.id) {
                           <button
                             type="button"
                             class="assignee-option"
@@ -472,15 +422,17 @@
                             (click)="selectAssignee(user)"
                           >
                             <span class="option-avatar">
-                              {{ user.name ? user.name.charAt(0).toUpperCase() : '? }}
+                              {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
                             </span>
                             <span class="option-details">
-                              <strong> {{ user.name }} </strong>
-                              <small> {{ user.email }} </small>
+                              <strong>
+                                {{ user.name }}
+                              </strong>
+                              <small>
+                                {{ user.email }}
+                              </small>
                             </span>
-                            @if (taskForm.get('assignedToIds')?.value?.includes(user.id)) {
-                              <span class="option-check">&#10003;</span>
-                            }
+                            @if (taskForm.get('assignedToIds')?.value?.includes(user.id)) { <span class="option-check"> &#10003; </span> }
                           </button>
                         }
                       } @else {
@@ -489,11 +441,7 @@
                     </div>
                   }
                 </div>
-                @if (getSelectedAssignees().length > 0) {
-                  <button type="button" class="clear-assignees" (click)="clearAssignee()">
-                    Clear all
-                  </button>
-                }
+                @if (selectedAssignees().length > 0) { <button type="button" class="clear-assignees" (click)="clearAssignee()"> Clear all </button> }
               </div>
             </div>
             <div class="form-actions">
@@ -506,11 +454,7 @@
                 Cancel
               </button>
               <button type="submit" class="save-button" [disabled]="saving()">
-                @if (saving()) {
-                  Creating...
-                } @else {
-                  Create Task
-                }
+                @if (saving()) { Creating... } @else { Create Task }
               </button>
             </div>
           </form>
@@ -518,18 +462,10 @@
           <div class="modal-header">
             <div>
               <h2>
-                @if (!currentTask.isArchived && canEditTask(currentTask)) {
-                  Edit Task
-                } @else {
-                  Task Preview
-                }
+                @if (!currentTask.isArchived && canEditTask(currentTask)) { Edit Task } @else { Task Preview }
               </h2>
               <p>
-                @if (!currentTask.isArchived && canEditTask(currentTask)) {
-                  Update task information and assignment.
-                } @else {
-                  View task information. This task is read-only.
-                }
+                @if (!currentTask.isArchived && canEditTask(currentTask)) { Update task information and assignment. } @else { View task information. This task is read-only. }
               </p>
             </div>
             <button
@@ -557,16 +493,16 @@
               (click)="setModalTab('logs')"
             >
               Audit Logs
-              @if (auditLogs().length > 0) {
-                <span class="log-count"> {{ auditLogs().length }} </span>
-              }
+              @if (auditLogs().length > 0) { <span class="log-count"> {{ auditLogs().length }} </span> }
             </button>
           </div>
           @if (activeModalTab === 'details') {
             @if (!currentTask.isArchived && canEditTask(currentTask)) {
               <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="task-form">
                 @if (formError()) {
-                  <div class="form-error">{{ formError() }}</div>
+                  <div class="form-error">
+                    {{ formError() }}
+                  </div>
                 }
                 <div class="editable-section">
                   <div class="section-title">Task Details</div>
@@ -600,14 +536,16 @@
                   </div>
                   <div class="form-group">
                     <label> Assigned To </label>
-                    @if (getSelectedAssignees().length > 0) {
+                    @if (selectedAssignees().length > 0) {
                       <div class="selected-assignees">
-                        @for (user of getSelectedAssignees(); track user.id) {
+                        @for (user of selectedAssignees(); track user.id) {
                           <div class="assignee-chip">
                             <span class="assignee-avatar">
                               {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
                             </span>
-                            <span class="assignee-name"> {{ user.name }} </span>
+                            <span class="assignee-name">
+                              {{ user.name }}
+                            </span>
                             <button
                               type="button"
                               class="remove-assignee"
@@ -629,10 +567,10 @@
                         (ngModelChange)="onAssigneeSearchChange($event)"
                         (focus)="openAssigneeDropdown()"
                       />
-                      @if (assigneeDropdownOpen) {
+                      @if (assigneeDropdownOpen()) {
                         <div class="assignee-options">
-                          @if (filteredAssignableUsers.length > 0) {
-                            @for (user of filteredAssignableUsers; track user.id) {
+                          @if (filteredAssignableUsers().length > 0) {
+                            @for (user of filteredAssignableUsers(); track user.id) {
                               <button
                                 type="button"
                                 class="assignee-option"
@@ -645,11 +583,15 @@
                                   {{ user.name ? user.name.charAt(0).toUpperCase() : '?' }}
                                 </span>
                                 <span class="option-details">
-                                  <strong> {{ user.name }} </strong>
-                                  <small> {{ user.email }} </small>
+                                  <strong>
+                                    {{ user.name }}
+                                  </strong>
+                                  <small>
+                                    {{ user.email }}
+                                  </small>
                                 </span>
                                 @if (taskForm.get('assignedToIds')?.value?.includes(user.id)) {
-                                  <span class="option-check">&#10003;</span>
+                                  <span class="option-check"> &#10003; </span>
                                 }
                               </button>
                             }
@@ -659,7 +601,7 @@
                         </div>
                       }
                     </div>
-                    @if (getSelectedAssignees().length > 0) {
+                    @if (selectedAssignees().length > 0) {
                       <button type="button" class="clear-assignees" (click)="clearAssignee()">
                         Clear all
                       </button>
@@ -668,17 +610,23 @@
                 </div>
                 <div class="task-information">
                   <div class="info-item">
-                    <span> Created By </span>
-                    <strong> {{ currentTask.createdByName }} </strong>
+                    <span>Created By</span>
+                    <strong>
+                      {{ currentTask.createdByName }}
+                    </strong>
                   </div>
                   <div class="info-item">
-                    <span> Current Status </span>
-                    <strong> {{ getStatusText(currentTask.status) }} </strong>
+                    <span>Current Status</span>
+                    <strong>
+                      {{ getStatusText(currentTask.status) }}
+                    </strong>
                   </div>
                   @if (getParentTaskTitle(currentTask); as parentTitle) {
                     <div class="info-item">
-                      <span> Parent Task </span>
-                      <strong> {{ parentTitle }} </strong>
+                      <span>Parent Task</span>
+                      <strong>
+                        {{ parentTitle }}
+                      </strong>
                     </div>
                   }
                 </div>
@@ -718,28 +666,24 @@
                     This task is archived and is available for preview only.
                   </div>
                   <div class="view-field">
-                    <span> Title </span>
-                    <strong> {{ currentTask.title }} </strong>
+                    <span>Title</span>
+                    <strong>
+                      {{ currentTask.title }}
+                    </strong>
                   </div>
                   <div class="view-field">
-                    <span> Description </span>
-                    @if (currentTask.description) {
-                      <strong> {{ currentTask.description }} </strong>
-                    } @else {
-                      <strong class="no-value"> No description </strong>
-                    }
+                    <span>Description</span>
+                    @if (currentTask.description) { <strong>{{ currentTask.description }}</strong> } @else { <strong class="no-value"> No description </strong> }
                   </div>
                   <div class="view-field">
-                    <span> Deadline </span>
-                    @if (currentTask.dueDate) {
-                      <strong> {{ currentTask.dueDate | date: 'dd MMM yyyy' }} </strong>
-                    } @else {
-                      <strong class="no-value"> No deadline </strong>
-                    }
+                    <span>Deadline</span>
+                    @if (currentTask.dueDate) { <strong>{{ currentTask.dueDate | date: 'dd MMM yyyy' }}</strong> } @else { <strong class="no-value"> No deadline </strong> }
                   </div>
                   <div class="view-field">
-                    <span> Assigned To </span>
-                    <strong> {{ getAssignedNames(currentTask) }} </strong>
+                    <span>Assigned To</span>
+                    <strong>
+                      {{ getAssignedNames(currentTask) }}
+                    </strong>
                   </div>
                   <div class="preview-archived-notice">
                     <span class="archived-chip"> Archived </span>
@@ -748,17 +692,23 @@
                 </div>
                 <div class="task-information">
                   <div class="info-item">
-                    <span> Created By </span>
-                    <strong> {{ currentTask.createdByName }} </strong>
+                    <span>Created By</span>
+                    <strong>
+                      {{ currentTask.createdByName }}
+                    </strong>
                   </div>
                   <div class="info-item">
-                    <span> Current Status </span>
-                    <strong> {{ getStatusText(currentTask.status) }} </strong>
+                    <span>Current Status</span>
+                    <strong>
+                      {{ getStatusText(currentTask.status) }}
+                    </strong>
                   </div>
                   @if (getParentTaskTitle(currentTask); as parentTitle) {
                     <div class="info-item">
-                      <span> Parent Task </span>
-                      <strong> {{ parentTitle }} </strong>
+                      <span>Parent Task</span>
+                      <strong>
+                        {{ parentTitle }}
+                      </strong>
                     </div>
                   }
                 </div>
@@ -783,7 +733,9 @@
                   <p>Loading audit logs...</p>
                 </div>
               } @else if (auditLogError()) {
-                <div class="audit-error">{{ auditLogError() }}</div>
+                <div class="audit-error">
+                  {{ auditLogError() }}
+                </div>
               } @else if (auditLogs().length === 0) {
                 <div class="audit-empty">
                   <div class="audit-empty-icon">&#10003;</div>
@@ -821,9 +773,13 @@
                       <div class="audit-log-content">
                         <div class="audit-log-header">
                           <div>
-                            <strong> {{ log.action }} </strong>
+                            <strong>
+                              {{ log.action }}
+                            </strong>
                             @if (log.fieldName) {
-                              <span class="audit-log-field"> {{ log.fieldName }} </span>
+                              <span class="audit-log-field">
+                                {{ log.fieldName }}
+                              </span>
                             }
                           </div>
                           <span class="audit-date">
@@ -834,19 +790,19 @@
                           <span class="audit-user-avatar">
                             {{ log.userName ? log.userName.charAt(0).toUpperCase() : '?' }}
                           </span>
-                          <span> {{ log.userName }} </span>
+                          <span>{{ log.userName }}</span>
                         </div>
                         @if (log.oldValue || log.newValue) {
                           <div class="audit-values">
                             @if (log.oldValue) {
                               <div class="audit-value old-value">
-                                <span class="value-label">OLD</span>
+                                <span class="value-label"> OLD </span>
                                 @for (item of parseAuditValues(log.oldValue); track $index) {
                                   <div class="audit-field">
-                                    @if (item.key) {
-                                      <span class="audit-field-name"> {{ item.key }}: </span>
-                                    }
-                                    <span class="audit-field-value"> {{ item.value }} </span>
+                                    @if (item.key) { <span class="audit-field-name"> {{ item.key }}: </span> }
+                                    <span class="audit-field-value">
+                                      {{ item.value }}
+                                    </span>
                                   </div>
                                 }
                               </div>
@@ -856,12 +812,10 @@
                             }
                             @if (log.newValue) {
                               <div class="audit-value new-value">
-                                <span class="value-label">NEW</span>
+                                <span class="value-label"> NEW </span>
                                 @for (item of parseAuditValues(log.newValue); track $index) {
                                   <div class="audit-field">
-                                    @if (item.key) {
-                                      <span class="audit-field-name"> {{ item.key }}: </span>
-                                    }
+                                    @if (item.key) { <span class="audit-field-name"> {{ item.key }}: </span> }
                                     <span class="audit-field-value">
                                       {{ item.value }}
                                     </span>
