@@ -5,8 +5,6 @@ export const canManageTasks = (user: CurrentUser | null): boolean => !!(user?.is
 export const canEditTask = (user: CurrentUser | null, task: TaskResponse): boolean =>
     !!(canManageTasks(user) || task.createdById === user?.userId || task.assignedToIds?.includes(user?.userId ?? -1));
 
-export const canChangeTaskStatus = (user: CurrentUser | null, task: TaskResponse): boolean =>
-    !!(canManageTasks(user) || task.createdById === user?.userId || task.assignedToIds?.includes(user?.userId ?? -1));
 
 // export const canDeleteTask = (user: CurrentUser | null, task: TaskResponse): boolean =>
 //   !!(canManageTasks(user) || task.createdById === user?.userId);

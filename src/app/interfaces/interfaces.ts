@@ -38,37 +38,13 @@ export interface TaskResponse {
   createdDate: string;
   dueDate: string | null;
   status: number;
-
   createdById: number;
   createdByName: string;
-
   assignedToIds: number[];
   assignedToNames: string[];
-
   isArchived: boolean;
   isDeleted?: boolean;
-
   parentTaskId: number | null;
-}
-
-export interface CreateTaskRequest {
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  assignedToIds: number[];
-  parentTaskId: number | null;
-}
-
-export interface UpdateTaskRequest {
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  assignedToIds: number[];
-  parentTaskId: number | null;
-}
-
-export interface UpdateTaskStatusRequest {
-  status: number;
 }
 
 export interface UserResponse {
@@ -82,23 +58,6 @@ export interface UserResponse {
   isDeleted?: boolean;
 }
 
-export interface CreateUserRequest {
-  name: string;
-  email: string;
-  contact: string | null;
-  password: string;
-  canReadUsers: boolean;
-  canWriteUsers: boolean;
-}
-
-export interface UpdateUserRequest {
-  name?: string;
-  contact?: string | null;
-  password?: string | null;
-  canReadUsers?: boolean;
-  canWriteUsers?: boolean;
-}
-
  export interface AuditLog {
   id: number;
   taskId: number;
@@ -109,4 +68,15 @@ export interface UpdateUserRequest {
   oldValue: string | null;
   newValue: string | null;
   createdDate: string;
+}
+
+export interface SaveTaskPayload {
+  id?: number | null;
+  title?: string | null;
+  description?: string | null;
+  dueDate?: string | null;
+  assignedToIds?: number[];
+  parentTaskId?: number | null;
+  status?: number | null;
+  isArchived?: boolean | null;
 }

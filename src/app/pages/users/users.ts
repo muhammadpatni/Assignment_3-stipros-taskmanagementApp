@@ -45,7 +45,7 @@ export class Users implements OnInit {
   userForm = new FormGroup({
     name: new FormControl('', [Validators.required, Validators.maxLength(100)]),
     email: new FormControl('', [Validators.required, Validators.email, Validators.maxLength(255)]),
-    contact: new FormControl('', Validators.maxLength(50)),
+    contact: new FormControl('', Validators.pattern('^03[0-9]{9}$')),
     password: new FormControl(''),
     canReadUsers: new FormControl(false),
     canWriteUsers: new FormControl(false),

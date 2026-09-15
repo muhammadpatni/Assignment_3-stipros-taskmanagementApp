@@ -620,20 +620,15 @@
   height: 30px;
   min-width: 30px;
   margin-left: -6px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   border: 2px solid #fff;
   border-radius: 50%;
-
   background: #111827;
   color: #fff;
-
   font-size: 9px;
   font-weight: 700;
-
   box-sizing: border-box;
 }
 
@@ -646,30 +641,23 @@
   height: 30px;
   min-width: 30px;
   margin-left: -6px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   border: 2px solid #fff;
   border-radius: 50%;
-
   background: #f3f4f6;
   color: #374151;
-
   font-size: 9px;
   font-weight: 700;
-
   box-sizing: border-box;
 }
 
 .assigned-names {
   max-width: 220px;
-
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
   color: #374151;
   font-size: 12px;
 }

@@ -4,7 +4,7 @@
       <h1>My Tasks</h1>
       <p>Tasks created or assigned to you</p>
     </div>
-    <button type="button" class="create-button" (click)="createTask()">+ Create Task</button>
+    <button type="button" class="create-button" (click)="openTaskModal(null)">+ Create Task</button>
   </div>
   <div class="toolbar">
     <div class="search-box">
@@ -48,8 +48,8 @@
   @if (!loading() && !errorMessage()) {
   @if (filteredTasks().length > 0) {
   <div class="task-table-container devextreme-table-container">
-    <dx-data-grid class="task-data-grid" [dataSource]="visibleTasks()" [showBorders]="true" [allowColumnResizing]="false"
-      (onRowClick)="editTask($event.data)">
+    <dx-data-grid class="task-data-grid" [dataSource]="visibleTasks()" [showBorders]="true"
+      [allowColumnResizing]="false" (onRowClick)="editTask($event.data)">
       <dxo-paging [enabled]="false"></dxo-paging>
       <dxo-sorting [mode]="'none'"></dxo-sorting>
       <dxo-scrolling mode="standard" [useNative]="true" showScrollbar="always"></dxo-scrolling>
@@ -61,7 +61,7 @@
           <span class="archived-chip">Archived</span>
           }
           <div class="task-title-row">
-            @if (hasChildren(cell.data.id)) {
+            @if (hasChildren(cell.data.id).hasChildren) {
             <button type="button" class="expand-toggle" [class.expanded]="isExpanded(cell.data.id)"
               (click)="toggleExpand(cell.data.id, $event)" [attr.aria-label]="
                       isExpanded(cell.data.id) ? 'Collapse sub-tasks' : 'Expand sub-tasks'
@@ -72,9 +72,9 @@
             <span class="expand-spacer"></span>
             }
             <strong>{{ cell.data.title }}</strong>
-            @if (hasChildren(cell.data.id)) {
+            @if (hasChildren(cell.data.id).hasChildren) {
             <span class="child-count" title="Sub-tasks">{{
-              getChildren(cell.data.id).length
+              hasChildren(cell.data.id).childrenCount
               }}</span>
             }
           </div>
@@ -83,7 +83,7 @@
 
       <dxi-column dataField="status" caption="Status" cellTemplate="statusCell" [width]="125"></dxi-column>
       <div *dxTemplate="let cell of 'statusCell'">
-        @if (!cell.data.isArchived && canChangeStatus(cell.data)) {
+        @if (!cell.data.isArchived && canEditTask(cell.data)) {
         <select class="status-select" [class]="getStatusClass(cell.data.status)" [value]="cell.data.status"
           (click)="$event.stopPropagation()" (change)="updateTaskStatus(cell.data, $event)">
           <option value="1">Pending</option>
@@ -176,7 +176,7 @@
           </button>
           }
           @if (!cell.data.isArchived && canEditTask(cell.data)) {
-          <button type="button" class="action-button subtask" (click)="addSubTask(cell.data)">
+          <button type="button" class="action-button subtask" (click)="openTaskModal(null, { parentTask: cell.data })">
             + Sub-task
           </button>
           }
@@ -190,7 +190,7 @@
     <h2>{{ getEmptyStateTitle() }}</h2>
     <p>{{ getEmptyStateMessage() }}</p>
     @if (activeTab() !== 'archived') {
-    <button type="button" class="create-button" (click)="createTask()">+ Create Task</button>
+    <button type="button" class="create-button" (click)="openTaskModal(null)">+ Create Task</button>
     }
   </div>
   }
@@ -202,25 +202,19 @@
         <div>
           <div class="modal-title-row">
             <h2>
-              @if (previewMode) {
-              Task Details
-              } @else if (editingTaskId === null) {
-              Create Task
-              } @else {
-              Edit Task
-              }
+              @if (previewMode) { Task Details }
+              @else if (editingTaskId === null) { Create Task }
+              @else { Edit Task }
             </h2>
             @if (previewMode) {
             <span class="preview-badge">View Only</span>
             }
           </div>
           <p>
-            @if (previewMode) {
-            View task details.
-            } @else if (editingTaskId === null) {
-            @if (parentTaskForCreate) {
-            This will be created as a sub-task of "{{ parentTaskForCreate.title }}".
-            } @else {
+            @if (previewMode) { View task details. }
+            @else if (editingTaskId === null) {
+            @if (parentTaskForCreate) { This will be created as a sub-task of "{{ parentTaskForCreate.title }}". } @else
+            {
             Create a new task and optionally assign it.
             }
             } @else {
@@ -383,7 +377,8 @@
         <div class="form-actions">
           @if (getCurrentTask(); as currentTask) {
           @if (!currentTask.isArchived && canEditTask(currentTask)) {
-          <button type="button" class="subtask-button" [disabled]="savingTask" (click)="addSubTask(currentTask)">
+          <button type="button" class="subtask-button" [disabled]="savingTask"
+            (click)="openTaskModal(null, { parentTask: currentTask })">
             + Add Sub-task
           </button>
           }

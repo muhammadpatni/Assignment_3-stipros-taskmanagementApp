@@ -32,7 +32,7 @@
     <dx-data-grid class="user-data-grid" [dataSource]="filteredUsers()" [showBorders]="true"
       [allowColumnResizing]="false" (onRowClick)="editUser($event.data)">
       <dxo-sorting [mode]="'none'"></dxo-sorting>
-      <dxo-scrolling mode="standard"  showScrollbar="always"></dxo-scrolling>
+      <dxo-scrolling mode="standard" showScrollbar="always"></dxo-scrolling>
 
       <dxi-column dataField="name" caption="User" cellTemplate="userCell" [width]="245"></dxi-column>
       <div *dxTemplate="let cell of 'userCell'">
@@ -168,7 +168,12 @@
         </div>
         <div class="form-group">
           <label for="contact"> Contact </label>
-          <input id="contact" type="text" formControlName="contact" placeholder="Enter contact" maxlength="50" />
+          <input id="contact" type="text" formControlName="contact" placeholder="03XXXXXXXXX" maxlength="11" />
+          @if (isFieldInvalid('contact')) {
+          <small class="field-error">
+            Please enter a valid contact number (03XXXXXXXXX).
+          </small>
+          }
         </div>
         <div class="form-group">
           <label for="password">

@@ -25,8 +25,9 @@ export const filterTasks = (tasks: TaskResponse[], searchText: string, status?: 
   const search = searchText.trim().toLowerCase();
   return tasks.filter(task => {
     const assignedNames = task.assignedToNames ?? [];
-    const matchesSearch = !search || [task.title, task.description, task.createdByName, ...assignedNames
-    ].some(value => (value ?? '').toLowerCase().includes(search));
+    const matchesSearch = !search ||
+      [task.title, task.description, task.createdByName, ...assignedNames]
+        .some(value => (value ?? '').toLowerCase().includes(search));
     return (matchesSearch && (!status || status === 'all' || task.status === Number(status)));
   });
 };

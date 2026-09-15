@@ -4,22 +4,11 @@ import { ReactiveFormsModule, FormGroup, Validators, FormControl } from '@angula
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { DxDataGridModule, DxTemplateModule } from 'devextreme-angular';
-import { TaskResponse, AssignableUser, AuditLog } from '../../interfaces/interfaces';
+import { TaskResponse, AssignableUser, AuditLog, SaveTaskPayload } from '../../interfaces/interfaces';
 import { Auth } from '../../services/auth';
 import { API, authHeaders, getErrorMessage } from '../../helpers/api';
-import { canChangeTaskStatus, canEditTask } from '../../helpers/permissions';
+import { canEditTask } from '../../helpers/permissions';
 import { filterTasks, getAssignedToName, taskStatusClass, taskStatusText } from '../../helpers/task';
-
-type SaveTaskPayload = {
-  id?: number | null;
-  title?: string | null;
-  description?: string | null;
-  dueDate?: string | null;
-  assignedToIds?: number[];
-  parentTaskId?: number | null;
-  status?: number | null;
-  isArchived?: boolean | null;
-};
 
 @Component({
   selector: 'app-tasks',
@@ -100,42 +89,33 @@ export class Tasks implements OnInit {
   getTaskDepth(task: TaskResponse): number {
     let depth = 0;
     let parentId = task.parentTaskId;
-
     while (parentId !== null && parentId !== undefined) {
       const parent = this.filteredTasks().find(item => item.id === parentId);
-
       if (!parent) {
         break;
       }
-
       depth++;
       parentId = parent.parentTaskId;
     }
-
     return depth;
   }
 
   loadMyTasks(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-
     const user = this.auth.getCurrentUser();
-
     if (!user) {
       this.loading.set(false);
       return;
     }
-
     const whereClause = `t.IsDeleted = 0 AND (t.CreatedBy = ${user.userId} OR EXISTS(
   SELECT 1 FROM OPENJSON(t.AssignedTo) j   WHERE TRY_CONVERT(INT, j.value) = ${user.userId}))`;
-
     this.http.post<TaskResponse[]>(`${API.tasks}/my`, { whereClause },
       { headers: authHeaders(this.auth.getToken()) }).subscribe({
         next: response => {
           this.tasks.set(response);
           this.loading.set(false);
         },
-
         error: error => {
           console.error('Failed to load tasks:', error);
           this.errorMessage.set(getErrorMessage(error, 'Unable to load tasks. Please try again.'));
@@ -152,7 +132,6 @@ export class Tasks implements OnInit {
     }
     else {
       tasks = tasks.filter(task => !task.isArchived);
-
       if (this.activeTab() === 'created') {
         tasks = tasks.filter(task => task.createdById === currentUser.userId);
       }
@@ -160,7 +139,6 @@ export class Tasks implements OnInit {
         tasks = tasks.filter(task => task.assignedToIds?.includes(currentUser.userId));
       }
     }
-
     return filterTasks(tasks, this.searchText());
   });
 
@@ -172,12 +150,9 @@ export class Tasks implements OnInit {
     if (this.auditLogsLoadedForTask === taskId && !this.loadingAuditLogs()) {
       return;
     }
-
     this.loadingAuditLogs.set(true);
     this.auditLogError.set('');
-
     const headers = authHeaders(this.auth.getToken());
-
     this.http.get<AuditLog[]>(`${API.tasks}/${taskId}/audit-logs`, { headers }).subscribe({
       next: response => {
         this.auditLogs.set(response ?? []);
@@ -187,11 +162,9 @@ export class Tasks implements OnInit {
 
       error: error => {
         console.error('Failed to load audit logs:', error);
-
         this.auditLogs.set([]);
         this.auditLogsLoadedForTask = null;
         this.loadingAuditLogs.set(false);
-
         this.auditLogError.set(error?.error?.message || 'Unable to load audit logs.');
       }
     });
@@ -207,7 +180,6 @@ export class Tasks implements OnInit {
     else {
       next.add(taskId);
     }
-
     this.expandedTaskIds.set(next);
   }
 
@@ -221,12 +193,12 @@ export class Tasks implements OnInit {
     return this.expandedTaskIds().has(taskId);
   }
 
-  getChildren(taskId: number): TaskResponse[] {
-    return this.filteredTasks().filter(task => task.parentTaskId === taskId);
-  }
-
-  hasChildren(taskId: number): boolean {
-    return this.getChildren(taskId).length > 0;
+  hasChildren(taskId: number): { hasChildren: boolean, childrenCount: number } {
+    const childrenCount = this.filteredTasks().filter(task => task.parentTaskId === taskId).length;
+    return {
+      hasChildren: childrenCount > 0,
+      childrenCount
+    };
   }
 
   isArchivedByParent(task: TaskResponse): boolean {
@@ -247,12 +219,7 @@ export class Tasks implements OnInit {
       visited.add(parentId);
       parentId = parent.parentTaskId;
     }
-
     return false;
-  }
-
-  rootTasks(): TaskResponse[] {
-    return this.filteredTasks().filter(task => task.parentTaskId === null || task.parentTaskId === undefined);
   }
 
   getParentTaskTitle(task: TaskResponse): string | null {
@@ -274,36 +241,23 @@ export class Tasks implements OnInit {
   }
 
   isOverdue(task: TaskResponse): boolean {
-    if (task.isArchived) {
+    if (task.isArchived || (!task.dueDate) || task.status === 3) {
       return false;
     }
-
-    if (!task.dueDate) {
-      return false;
-    }
-
-    if (task.status === 3) {
-      return false;
-    }
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const dueDate = new Date(task.dueDate);
     dueDate.setHours(0, 0, 0, 0);
-
     return dueDate < today;
   }
 
   getTabCount(tab: 'all' | 'created' | 'assigned' | 'archived'): number {
     const userId = this.auth.getCurrentUser()!.userId;
-
     const tasks = this.tasks();
-
     if (tab === 'archived') {
       return tasks.filter(task => task.isArchived).length;
     }
-
     return tasks.filter(task =>
       !task.isArchived && (tab === 'all' || (tab === 'created' && task.createdById === userId) ||
         (tab === 'assigned' && task.assignedToIds?.includes(userId)))).length;
@@ -349,83 +303,32 @@ export class Tasks implements OnInit {
     }
   }
 
-  canChangeStatus(task: TaskResponse): boolean {
-    return canChangeTaskStatus(this.auth.getCurrentUser(), task);
-  }
-
-  createTask(): void {
-    this.editingTaskId = null;
+  openTaskModal(task: TaskResponse | null, options?: { preview?: boolean; parentTask?: TaskResponse | null }): void {
+    this.previewMode = options?.preview ?? false;
+    this.editingTaskId = task?.id ?? null;
+    this.parentTaskForCreate = task ? null : (options?.parentTask ?? null);
     this.showCreateForm = true;
-    this.previewMode = false;
-    this.parentTaskForCreate = null;
     this.activeModalTab = 'details';
-
-    this.auditLogs.set([]);
-    this.auditLogsLoadedForTask = null;
-    this.auditLogError.set('');
-
     this.formError.set('');
-    this.assigneeSearch.set('');
 
     this.taskForm.reset({
-      title: '',
-      description: '',
-      dueDate: '',
-      assignedToIds: []
+      title: task?.title ?? '',
+      description: task?.description ?? '',
+      dueDate: task?.dueDate ? task.dueDate.substring(0, 10) : '',
+      assignedToIds: task ? [...(task.assignedToIds ?? [])] : []
     });
-
     this.loadAssignableUsers();
-  }
-
-  addSubTask(parentTask: TaskResponse): void {
-    this.editingTaskId = null;
-    this.showCreateForm = true;
-    this.previewMode = false;
-    this.parentTaskForCreate = parentTask;
-    this.activeModalTab = 'details';
-
-    this.auditLogs.set([]);
-    this.auditLogsLoadedForTask = null;
-    this.auditLogError.set('');
-
-    this.formError.set('');
-    this.assigneeSearch.set('');
-
-    this.taskForm.reset({
-      title: '',
-      description: '',
-      dueDate: '',
-      assignedToIds: []
-    });
-
-    this.loadAssignableUsers();
+    if (task) {
+      this.loadAuditLogs(task.id);
+    }
   }
 
   cancelCreateTask(): void {
     if (this.savingTask) {
       return;
     }
-
     this.showCreateForm = false;
-    this.previewMode = false;
-    this.editingTaskId = null;
-    this.parentTaskForCreate = null;
-    this.assigneeDropdownOpen = false;
-    this.activeModalTab = 'details';
-
-    this.auditLogs.set([]);
-    this.auditLogsLoadedForTask = null;
-    this.auditLogError.set('');
-
     this.formError.set('');
-    this.assigneeSearch.set('');
-
-    this.taskForm.reset({
-      title: '',
-      description: '',
-      dueDate: '',
-      assignedToIds: []
-    });
   }
 
   getSelectedAssigneeNames(): string[] {
@@ -464,11 +367,9 @@ export class Tasks implements OnInit {
 
       error: error => {
         console.error('Failed to load assignable users:', error);
-
         this.assignableUsers.set([]);
         this.filteredAssignableUsers = [];
         this.loadingUsers = false;
-
         this.formError.set(error?.error?.message || 'Unable to load available users.');
       }
     });
@@ -476,14 +377,11 @@ export class Tasks implements OnInit {
 
   onAssigneeSearchChange(value: string): void {
     this.assigneeSearch.set(value);
-
     const search = value.trim().toLowerCase();
-
     if (!search) {
       this.filteredAssignableUsers = this.assignableUsers();
       return;
     }
-
     this.filteredAssignableUsers = this.assignableUsers().filter(user => user.name.toLowerCase().includes(search) || user.email.toLowerCase().includes(search));
   }
 
@@ -536,59 +434,49 @@ export class Tasks implements OnInit {
     return !!(control && control.invalid && (control.touched || control.dirty));
   }
 
-  archiveTask(task: TaskResponse): void {
-    this.archivingTaskId = task.id;
-    this.errorMessage.set('');
-
+  private updateTask(payload: SaveTaskPayload, defaultErrorMessage: string,
+    onSuccess: (task: TaskResponse) => void,
+    onError: (message: string) => void): void {
     const headers = authHeaders(this.auth.getToken());
-
-    const payload: SaveTaskPayload = {
-      id: task.id,
-      isArchived: !task.isArchived
-    };
-
     this.http.post<TaskResponse>(`${API.tasks}/save`, payload, { headers }).subscribe({
-      next: () => {
-        this.archivingTaskId = null;
-        this.loadMyTasks();
-      },
-
+      next: response => onSuccess(response),
       error: error => {
-        console.error(
-          task.isArchived ? 'Failed to unarchive task:' : 'Failed to archive task:',
-          error
-        );
-
-        this.archivingTaskId = null;
-
-        this.errorMessage.set(error?.error?.message || (task.isArchived ? 'Unable to unarchive task.'
-          : 'Unable to archive task.'));
+        console.error('Failed to update task:', error);
+        onError(getErrorMessage(error, defaultErrorMessage));
       }
     });
   }
 
+  archiveTask(task: TaskResponse): void {
+    this.archivingTaskId = task.id;
+    this.errorMessage.set('');
+
+    this.updateTask({ id: task.id, isArchived: !task.isArchived },
+      task.isArchived ? 'Unable to unarchive task.' : 'Unable to archive task.',
+      () => {
+        this.archivingTaskId = null;
+        this.loadMyTasks();
+      },
+      message => {
+        this.archivingTaskId = null;
+        this.errorMessage.set(message);
+      }
+    );
+  }
+
   saveTask(): void {
-    if (this.previewMode) {
-      return;
-    }
-
+    
     this.formError.set('');
-
+    
     if (this.taskForm.invalid) {
       this.taskForm.markAllAsTouched();
       return;
     }
-
-    this.savingTask = true;
-
+    const isEditing = this.editingTaskId !== null;
+        this.savingTask = true;
     const formValue = this.taskForm.value;
-
-    const assignedToIds = [...new Set(formValue.assignedToIds ?? [])];
-
-    const headers = authHeaders(this.auth.getToken());
-
-    const parentId = this.editingTaskId !== null ? this.tasks().find(task => task.id === this.editingTaskId)?.parentTaskId ?? null : this.parentTaskForCreate?.id ?? null;
-
+    const assignedToIds = formValue.assignedToIds ?? [];
+    const parentId = isEditing ? this.tasks().find(task => task.id === this.editingTaskId)?.parentTaskId ?? null : this.parentTaskForCreate?.id ?? null;
     const payload: SaveTaskPayload = {
       id: this.editingTaskId,
       title: formValue.title?.trim() ?? '',
@@ -597,106 +485,40 @@ export class Tasks implements OnInit {
       assignedToIds,
       parentTaskId: parentId
     };
-
-    this.http.post<TaskResponse>(`${API.tasks}/save`, payload, { headers }).subscribe({
-      next: () => {
+    this.updateTask(payload, isEditing ? 'Unable to update task. Please try again.' : 'Unable to create task. Please try again.',
+      () => {
         const parentIdForExpand = this.parentTaskForCreate?.id ?? null;
-
         this.savingTask = false;
         this.showCreateForm = false;
         this.editingTaskId = null;
         this.parentTaskForCreate = null;
         this.assigneeDropdownOpen = false;
-
         this.taskForm.reset();
         this.assigneeSearch.set('');
-
         this.auditLogs.set([]);
         this.auditLogsLoadedForTask = null;
-
         this.loadMyTasks();
-
         if (parentIdForExpand !== null) {
           this.expandTask(parentIdForExpand);
         }
       },
-
-      error: error => {
-        console.error(this.editingTaskId !== null ? 'Failed to update task:' : 'Failed to create task:',
-          error
-        );
-
+      message => {
         this.savingTask = false;
-
-        this.formError.set(error?.error?.message || (this.editingTaskId !== null ? 'Unable to update task. Please try again.' : 'Unable to create task. Please try again.'));
+        this.formError.set(message);
       }
-    });
-
-    return;
+    );
   }
 
   editTask(task: TaskResponse): void {
-    if (task.isArchived) {
-      this.previewTask(task);
-      return;
-    }
-
-    this.previewMode = false;
-    this.editingTaskId = task.id;
-    this.parentTaskForCreate = null;
-    this.showCreateForm = true;
-    this.activeModalTab = 'details';
-
-    this.auditLogs.set([]);
-    this.auditLogsLoadedForTask = null;
-    this.auditLogError.set('');
-
-    this.formError.set('');
-
-    this.taskForm.patchValue({
-      title: task.title,
-      description: task.description ?? '',
-      dueDate: task.dueDate ? task.dueDate.substring(0, 10) : '',
-      assignedToIds: [...(task.assignedToIds ?? [])]
-    });
-
-    this.assigneeSearch.set('');
-    this.loadAssignableUsers();
-    this.loadAuditLogs(task.id);
+    this.openTaskModal(task, { preview: task.isArchived });
   }
 
   previewTask(task: TaskResponse): void {
-    this.previewMode = true;
-    this.editingTaskId = task.id;
-    this.parentTaskForCreate = null;
-    this.showCreateForm = true;
-    this.activeModalTab = 'details';
-
-    this.auditLogs.set([]);
-    this.auditLogsLoadedForTask = null;
-    this.auditLogError.set('');
-
-    this.formError.set('');
-
-    this.taskForm.patchValue({
-      title: task.title,
-      description: task.description ?? '',
-      dueDate: task.dueDate ? task.dueDate.substring(0, 10) : '',
-      assignedToIds: [...(task.assignedToIds ?? [])]
-    });
-
-    this.assigneeSearch.set('');
-    this.loadAssignableUsers();
-    this.loadAuditLogs(task.id);
+    this.openTaskModal(task, { preview: true });
   }
 
   canUpdateAssignedStatus(task: TaskResponse): boolean {
-    const user = this.auth.getCurrentUser();
-
-    if (!user) {
-      return false;
-    }
-
+    const user = this.auth.getCurrentUser()!;
     return task.assignedToIds.includes(user.userId);
   }
 
@@ -706,25 +528,18 @@ export class Tasks implements OnInit {
     if (!newStatus || newStatus === task.status) {
       return;
     }
-    const headers = authHeaders(this.auth.getToken());
-    const payload: SaveTaskPayload = {
-      id: task.id,
-      status: newStatus
-    };
-
-    this.http.post<TaskResponse>(`${API.tasks}/save`, payload, { headers }).subscribe({
-      next: response => {
+    this.updateTask(
+      { id: task.id, status: newStatus },
+      'Unable to update task status.',
+      response => {
         this.tasks.update(tasks => tasks.map(item => item.id === task.id ? response : item));
       },
-
-      error: error => {
-        console.error('Failed to update task status:', error);
-        this.errorMessage.set(error?.error?.message || 'Unable to update task status.');
-      }
-    });
+      message => this.errorMessage.set(message)
+    );
   }
 
   parseAuditValues(value: string | null | undefined): { key: string; value: string }[] {
+
     if (!value) {
       return [];
     }
@@ -746,40 +561,19 @@ export class Tasks implements OnInit {
       }
     }
 
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    if (parsed) {
       return Object.entries(parsed).map(([key, val]) => ({
-        key: this.formatAuditKey(key),
+        key: key,
         value: this.formatAuditValue(val, key)
       })
       );
     }
-
-    const strToParse = typeof parsed === 'string' ? parsed : rawStr;
-
-    const colonIndex = strToParse.indexOf(':');
-
-    if (colonIndex > -1) {
-      const rawKey = strToParse.substring(0, colonIndex).replace(/^"|"$/g, '').trim();
-
-      const rawVal = strToParse.substring(colonIndex + 1).replace(/^"|"$/g, '').trim();
-
-      return [{
-        key: this.formatAuditKey(rawKey),
-        value: this.formatAuditValue(rawVal, rawKey)
-      }];
-    }
-
-    return [{
-      key: '',
-      value: this.formatAuditValue(strToParse)
-    }];
+   return []
   }
 
-  formatAuditKey(key: string): string {
-    return key.replace(/-/g, ' ').trim();
-  }
 
   formatAuditValue(value: any, key?: string): string {
+
     if (value === null || value === undefined || value === '') {
       return '—';
     }
@@ -788,15 +582,15 @@ export class Tasks implements OnInit {
       return value.map(item => this.formatAuditValue(item)).join('\n');
     }
 
-    let strVal = String(value).replace(/^"|"$/g, '').trim();
+    let strVal = String(value)
 
     if (key && key.toLowerCase().includes('assigned')) {
-      return strVal.split(',').map(item => item.trim()).filter(item => item.length > 0).join('\n');
+      return strVal
     }
 
-    if (key && (key.toLowerCase().includes('date') || key.toLowerCase().includes('due'))) {
-      const date = new Date(strVal);
+    if (key && (key.toLowerCase().includes('due') || key.toLowerCase().includes('date'))) {
 
+      const date = new Date(strVal);
       if (!isNaN(date.getTime())) {
         return date.toLocaleDateString('en-GB', {
           day: '2-digit',
@@ -804,10 +598,6 @@ export class Tasks implements OnInit {
           year: 'numeric'
         });
       }
-    }
-
-    if (typeof value === 'object') {
-      return JSON.stringify(value);
     }
     return strVal;
   }
