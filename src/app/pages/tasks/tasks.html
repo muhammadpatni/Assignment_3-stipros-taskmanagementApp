@@ -67,8 +67,7 @@
               (click)="toggleExpand(cell.data.id, $event)">
               &#9654;
             </button>
-            }
-            <strong>{{ cell.data.title }}</strong>
+            } 
             @if (hasChildren(cell.data.id).hasChildren) {
               <span class="child-count" title="Sub-tasks">
               {{ hasChildren(cell.data.id).childrenCount }}</span>
