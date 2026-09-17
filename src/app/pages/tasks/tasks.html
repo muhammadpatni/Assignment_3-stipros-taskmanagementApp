@@ -80,7 +80,8 @@
       <div *dxTemplate="let cell of 'statusCell'">
         @if (!cell.data.isArchived && canEditTask(cell.data)) {
         <select class="status-select" [class]="getStatusClass(cell.data.status)" [value]="cell.data.status"
-          (click)="$event.stopPropagation()" (change)="updateTaskStatus(cell.data, $event)">
+          (click)="$event.stopPropagation()"
+          (change)="updateTaskStatus(cell.data, $event)">
           <option value="1">Pending</option>
           <option value="2">Process</option>
           <option value="3">Completed</option>
