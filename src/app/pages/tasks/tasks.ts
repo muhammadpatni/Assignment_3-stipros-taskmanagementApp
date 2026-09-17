@@ -89,7 +89,7 @@ export class Tasks implements OnInit {
   getTaskDepth(task: TaskResponse): number {
     let depth = 0;
     let parentId = task.parentTaskId;
-    while (parentId !== null && parentId !== undefined) {
+    while (parentId !== null) {
       const parent = this.filteredTasks().find(item => item.id === parentId);
       if (!parent) {
         break;

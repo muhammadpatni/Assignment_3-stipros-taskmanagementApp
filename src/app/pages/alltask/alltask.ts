@@ -310,7 +310,7 @@ export class AllTask implements OnInit {
               name: 'Myself',
               email: currentUser.email,
             };
-          } 
+          }
         }
         this.assignableUsers.set(users);
       },
@@ -454,16 +454,19 @@ export class AllTask implements OnInit {
     });
   }
 
-  saveTask(task?: TaskResponse, changes?: Partial<SaveTaskPayload>,): void {
+  saveTask(task?: TaskResponse, changes?: SaveTaskPayload): void {
     this.formError.set('');
 
     if (task && changes) {
+
       if (changes.status !== undefined && !this.canEditTask(task)) {
         return;
       }
+
       if (changes.isArchived !== undefined && !this.canEditTask(task) && !this.isOwnTask(task)) {
         return;
       }
+      
       const payload: SaveTaskPayload = {
         id: task.id,
         ...changes,

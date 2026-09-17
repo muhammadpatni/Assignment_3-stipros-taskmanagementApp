@@ -62,20 +62,16 @@
           }
           <div class="task-title-row">
             @if (hasChildren(cell.data.id).hasChildren) {
-            <button type="button" class="expand-toggle" [class.expanded]="isExpanded(cell.data.id)"
-              (click)="toggleExpand(cell.data.id, $event)" [attr.aria-label]="
-                      isExpanded(cell.data.id) ? 'Collapse sub-tasks' : 'Expand sub-tasks'
-                    ">
+              <button type="button" class="expand-toggle" [class.expanded]="isExpanded(cell.data.id)"
+              [attr.aria-label]="isExpanded(cell.data.id) ? 'Collapse sub-tasks' : 'Expand sub-tasks'"
+              (click)="toggleExpand(cell.data.id, $event)">
               &#9654;
             </button>
-            } @else if (getTaskDepth(cell.data) > 0) {
-            <span class="expand-spacer"></span>
             }
             <strong>{{ cell.data.title }}</strong>
             @if (hasChildren(cell.data.id).hasChildren) {
-            <span class="child-count" title="Sub-tasks">{{
-              hasChildren(cell.data.id).childrenCount
-              }}</span>
+              <span class="child-count" title="Sub-tasks">
+              {{ hasChildren(cell.data.id).childrenCount }}</span>
             }
           </div>
         </div>
