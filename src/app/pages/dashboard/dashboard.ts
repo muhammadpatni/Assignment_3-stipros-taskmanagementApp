@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '../../services/auth';
 import { TaskResponse } from '../../interfaces/interfaces';
-import { API, authHeaders } from '../../helpers/api';
+import { API, } from '../../helpers/api';
 import { getAssignedToName, taskStatusClass, taskStatusText } from '../../helpers/task';
 
 @Component({
@@ -33,13 +33,12 @@ export class Dashboard implements OnInit {
       return;
     }
 
-    const headers = authHeaders(this.auth.getToken());
     const whereClause =
       `(t.CreatedBy = ${user.userId} OR EXISTS(` +
       `SELECT 1 FROM OPENJSON(t.AssignedTo) j ` +
       `WHERE TRY_CONVERT(INT, j.value) = ${user.userId}))`;
 
-    this.http.post<TaskResponse[]>(`${API.tasks}/my`, { whereClause }, { headers }).subscribe({
+    this.http.post<TaskResponse[]>(`${API.tasks}/my`, { whereClause },).subscribe({
       next: (response) => {
         const activeTasks = response.filter(task => task.isDeleted !== true);
         this.tasks.set(activeTasks);
@@ -49,8 +48,8 @@ export class Dashboard implements OnInit {
       },
       error: (error) => { console.error('Failed to load dashboard tasks:', error); }
     });
-    if (this.auth.isMasterAdmin() || this.auth.canWriteUsers()||this.auth.canReadUsers()) {
-      this.http.get<any[]>(API.users, { headers }).subscribe({
+    if (this.auth.isMasterAdmin() || this.auth.canWriteUsers() || this.auth.canReadUsers()) {
+      this.http.get<any[]>(API.users,).subscribe({
         next: (response) => { this.totalUsers.set(response.length); },
         error: (error) => { console.error('Failed to load users:', error); }
       });

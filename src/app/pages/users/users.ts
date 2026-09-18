@@ -4,7 +4,7 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { DxDataGridModule, DxTemplateModule } from 'devextreme-angular';
 import { UserResponse } from '../../interfaces/interfaces';
-import { API, authHeaders, getErrorMessage } from '../../helpers/api';
+import { API, getErrorMessage } from '../../helpers/api';
 import {
   canDeleteUser, canEditUser, canEditUserPermissions
   , canManageTasks
@@ -56,7 +56,7 @@ export class Users implements OnInit {
   loadUsers(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.http.get<UserResponse[]>(API.users, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    this.http.get<UserResponse[]>(API.users).subscribe({
       next: users => {
         this.users.set(users);
         this.filteredUsers.set(users);
@@ -159,9 +159,7 @@ export class Users implements OnInit {
       canWriteUsers: value.canWriteUsers ?? false,
     };
 
-    this.http.post<UserResponse>(`${API.users}/save`, payload, {
-      headers: authHeaders(this.auth.getToken()),
-    }).subscribe({
+    this.http.post<UserResponse>(`${API.users}/save`, payload,).subscribe({
       next: () => { this.savingUser = false; this.cancelUserForm(); this.loadUsers(); },
       error: error => {
         this.savingUser = false;
@@ -176,7 +174,7 @@ export class Users implements OnInit {
   deleteUser(user: UserResponse): void {
     if (!this.canDeleteUser(user)) return;
     this.deletingUserId = user.id;
-    this.http.delete(`${API.users}/${user.id}`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    this.http.delete(`${API.users}/${user.id}`).subscribe({
       next: () => { this.deletingUserId = null; this.loadUsers(); },
       error: error => { this.deletingUserId = null; this.errorMessage.set(getErrorMessage(error, 'Unable to delete user.')); },
     });

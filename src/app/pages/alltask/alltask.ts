@@ -6,7 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { DxDataGridModule, DxTemplateModule } from 'devextreme-angular';
 import { TaskResponse, AssignableUser, AuditLog, SaveTaskPayload } from '../../interfaces/interfaces';
 import { Auth } from '../../services/auth';
-import { API, authHeaders, getErrorMessage } from '../../helpers/api';
+import { API, getErrorMessage } from '../../helpers/api';
 import { canManageTasks, canEditTask } from '../../helpers/permissions';
 import { filterTasks, taskStatusClass, taskStatusText, toDateInput } from '../../helpers/task';
 
@@ -276,25 +276,22 @@ export class AllTask implements OnInit {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    this.http.post<TaskResponse[]>(`${API.tasks}/all`, { whereClause: 't.IsDeleted = 0', },
-      { headers: authHeaders(this.auth.getToken()), },).subscribe({
-        next: (response) => {
-          this.tasks.set(response.filter((task) => task.isDeleted !== true),);
-          this.applyFilters();
-          this.loading.set(false);
-        },
-        error: (error) => {
-          console.error('Failed to load tasks:', error);
-          this.errorMessage.set(getErrorMessage(error, 'Unable to load tasks.'),);
-          this.loading.set(false);
-        },
-      });
+    this.http.post<TaskResponse[]>(`${API.tasks}/all`, { whereClause: 't.IsDeleted = 0', },).subscribe({
+      next: (response) => {
+        this.tasks.set(response.filter((task) => task.isDeleted !== true),);
+        this.applyFilters();
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error('Failed to load tasks:', error);
+        this.errorMessage.set(getErrorMessage(error, 'Unable to load tasks.'),);
+        this.loading.set(false);
+      },
+    });
   }
 
   loadUsers(): void {
-    this.http.get<AssignableUser[]>(`${API.users}/assignable`, {
-      headers: authHeaders(this.auth.getToken()),
-    }).subscribe({
+    this.http.get<AssignableUser[]>(`${API.users}/assignable`).subscribe({
       next: (response) => {
         const currentUser = this.auth.getCurrentUser();
         let users = [...response];
@@ -362,8 +359,7 @@ export class AllTask implements OnInit {
 
     this.loadingAuditLogs.set(true);
     this.auditLogError.set('');
-    const headers = authHeaders(this.auth.getToken());
-    this.http.get<AuditLog[]>(`${API.tasks}/${taskId}/audit-logs`, { headers },)
+    this.http.get<AuditLog[]>(`${API.tasks}/${taskId}/audit-logs`,)
       .subscribe({
         next: (response) => {
           this.auditLogs.set(response ?? []);
@@ -443,9 +439,7 @@ export class AllTask implements OnInit {
 
   private postTaskSave(payload: SaveTaskPayload, defaultErrorMessage: string,
     onSuccess: (task: TaskResponse) => void, onError: (message: string) => void,): void {
-    this.http.post<TaskResponse>(`${API.tasks}/save`, payload, {
-      headers: authHeaders(this.auth.getToken()),
-    }).subscribe({
+    this.http.post<TaskResponse>(`${API.tasks}/save`, payload).subscribe({
       next: (response) => onSuccess(response),
       error: (error) => {
         console.error('Failed to save task:', error);
@@ -466,7 +460,7 @@ export class AllTask implements OnInit {
       if (changes.isArchived !== undefined && !this.canEditTask(task) && !this.isOwnTask(task)) {
         return;
       }
-      
+
       const payload: SaveTaskPayload = {
         id: task.id,
         ...changes,

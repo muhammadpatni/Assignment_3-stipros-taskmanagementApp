@@ -4,13 +4,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '../../services/auth';
 import { CurrentUser, UserResponse } from '../../interfaces/interfaces';
-import { API, authHeaders, getErrorMessage } from '../../helpers/api';
+import { API, getErrorMessage } from '../../helpers/api';
 
-// Same shape as the payload used by the Users screen — kept in one place so
-// every screen goes through the single backend Save() endpoint, never a
-// separate PUT. Permission fields are optional on purpose: a self-update
-// (profile) must NOT send them, since Save() rejects a non-master-admin
-// trying to change their own permissions.
 type SaveUserPayload = {
   id: number | null;
   name?: string;
@@ -57,7 +52,7 @@ export class Profile {
   }
 
   loadUserDetails(userId: number): void {
-    this.http.get<UserResponse>(`${API.users}/${userId}`, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    this.http.get<UserResponse>(`${API.users}/${userId}`,).subscribe({
       next: response => {
         this.profileForm.patchValue({
           name: response.name,
@@ -96,7 +91,7 @@ export class Profile {
       password: value.password?.trim() || null
     };
 
-    this.http.post<UserResponse>(`${API.users}/save`, payload, { headers: authHeaders(this.auth.getToken()) }).subscribe({
+    this.http.post<UserResponse>(`${API.users}/save`, payload,).subscribe({
       next: response => {
         const currentUser = this.auth.getCurrentUser();
         if (currentUser) {
